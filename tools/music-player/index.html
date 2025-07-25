@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Player - Vibe Tools</title>
+    
+    <!-- Tailwind CSS & DaisyUI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.7.2/dist/full.min.css" rel="stylesheet" />
+    
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .card-gradient {
+            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.9) 100%);
+            backdrop-filter: blur(10px);
+        }
+        
+        .player-gradient {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        }
+        
+        .progress-bar {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.1s ease;
+        }
+        
+        .volume-bar {
+            background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+            transition: width 0.2s ease;
+        }
+        
+        .track-item {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .track-item:hover {
+            background: rgba(102, 126, 234, 0.1);
+            transform: translateX(4px);
+        }
+        
+        .track-item.active {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+            border-left: 4px solid #667eea;
+        }
+        
+        .control-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .play-btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            width: 60px;
+            height: 60px;
+        }
+        
+        .play-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+        }
+        
+        .album-art {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 3rem;
+            min-height: 200px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .album-art.playing::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+        
+        .visualizer {
+            display: flex;
+            align-items: end;
+            height: 40px;
+            gap: 2px;
+        }
+        
+        .visualizer-bar {
+            background: linear-gradient(to top, #667eea, #764ba2);
+            width: 3px;
+            border-radius: 1px;
+            opacity: 0.6;
+            transition: height 0.1s ease;
+        }
+        
+        .visualizer.active .visualizer-bar {
+            animation: bounce 1s ease-in-out infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { height: 4px; }
+            50% { height: 20px; }
+        }
+        
+        .drop-zone {
+            border: 2px dashed #e2e8f0;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .drop-zone.drag-over {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+            transform: scale(1.02);
+        }
+        
+        .playlist-item {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .playlist-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+        }
+        
+        .time-display {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+        
+        .feature-card {
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        
+        .toast-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            padding: 12px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .toast-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+        
+        .toast-error {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+        
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .range-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: #e2e8f0;
+            outline: none;
+            cursor: pointer;
+        }
+        
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+        
+        .range-slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen gradient-bg" x-data="musicPlayer()">
+    
+    <!-- Header -->
+    <header class="bg-white/80 backdrop-blur-md shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <a href="../../index.html" class="btn btn-ghost btn-sm">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        Back to Hub
+                    </a>
+                    <div class="flex items-center space-x-2">
+                        <div class="text-3xl">🎵</div>
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-800">Music Player</h1>
+                            <p class="text-sm text-gray-600">Simple audio player with playlist support</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <div class="badge badge-sm" :class="playlist.length > 0 ? 'badge-success' : 'badge-warning'">
+                        <i class="fas fa-music mr-1"></i>
+                        <span x-text="playlist.length + ' tracks'"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            
+            <!-- Main Player -->
+            <div class="xl:col-span-2 space-y-6">
+                
+                <!-- Current Track Display -->
+                <div class="player-gradient rounded-xl p-8 shadow-xl text-white">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                        
+                        <!-- Album Art -->
+                        <div class="album-art" :class="{ 'playing': isPlaying }">
+                            <div x-show="!currentTrack" class="text-center">
+                                <i class="fas fa-music text-6xl opacity-50"></i>
+                                <p class="text-sm mt-2 opacity-70">No track selected</p>
+                            </div>
+                            <div x-show="currentTrack" class="text-center">
+                                <i class="fas fa-compact-disc text-6xl" :class="{ 'animate-spin': isPlaying }"></i>
+                            </div>
+                        </div>
+                        
+                        <!-- Track Info -->
+                        <div class="md:col-span-2 space-y-4">
+                            <div x-show="!currentTrack" class="text-center md:text-left">
+                                <h3 class="text-2xl font-bold opacity-70">Welcome to Music Player</h3>
+                                <p class="text-lg opacity-50">Upload tracks to get started</p>
+                            </div>
+                            
+                            <div x-show="currentTrack" class="text-center md:text-left">
+                                <h3 class="text-2xl font-bold">
+                                    <span x-text="currentTrack?.name || 'Unknown Track'">Unknown Track</span>
+                                </h3>
+                                <p class="text-lg opacity-75" x-text="'Track ' + (currentTrackIndex + 1) + ' of ' + playlist.length"></p>
+                                
+                                <!-- Visualizer -->
+                                <div class="flex justify-center md:justify-start mt-4">
+                                    <div class="visualizer" :class="{ 'active': isPlaying }">
+                                        <template x-for="i in 20" :key="i">
+                                            <div class="visualizer-bar" :style="`animation-delay: ${i * 0.1}s`"></div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Progress Bar -->
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-sm opacity-75">
+                                    <span class="time-display" x-text="formatTime(currentTime)">0:00</span>
+                                    <span class="time-display" x-text="formatTime(duration)">0:00</span>
+                                </div>
+                                <div class="w-full bg-white/20 rounded-full h-2 cursor-pointer" @click="seekTo($event)">
+                                    <div class="progress-bar h-2 rounded-full" :style="`width: ${(currentTime / duration) * 100 || 0}%`"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Player Controls -->
+                            <div class="flex items-center justify-center space-x-4">
+                                <button 
+                                    class="control-btn text-white p-3 rounded-full"
+                                    @click="toggleShuffle()"
+                                    :class="{ 'bg-green-500': shuffleMode }"
+                                    title="Shuffle"
+                                >
+                                    <i class="fas fa-random"></i>
+                                </button>
+                                
+                                <button 
+                                    class="control-btn text-white p-3 rounded-full"
+                                    @click="previousTrack()"
+                                    :disabled="playlist.length === 0"
+                                    title="Previous"
+                                >
+                                    <i class="fas fa-step-backward"></i>
+                                </button>
+                                
+                                <button 
+                                    class="play-btn text-white rounded-full flex items-center justify-center"
+                                    @click="togglePlay()"
+                                    :disabled="!currentTrack"
+                                    title="Play/Pause"
+                                >
+                                    <i :class="isPlaying ? 'fas fa-pause' : 'fas fa-play'" class="text-xl"></i>
+                                </button>
+                                
+                                <button 
+                                    class="control-btn text-white p-3 rounded-full"
+                                    @click="nextTrack()"
+                                    :disabled="playlist.length === 0"
+                                    title="Next"
+                                >
+                                    <i class="fas fa-step-forward"></i>
+                                </button>
+                                
+                                <button 
+                                    class="control-btn text-white p-3 rounded-full"
+                                    @click="toggleRepeat()"
+                                    :class="{ 'bg-green-500': repeatMode !== 'none' }"
+                                    title="Repeat"
+                                >
+                                    <i :class="repeatMode === 'one' ? 'fas fa-redo-alt' : 'fas fa-repeat'"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Volume Control -->
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-volume-down opacity-75"></i>
+                                <div class="flex-1 relative">
+                                    <div 
+                                        class="bg-white/20 rounded-full h-2 cursor-pointer"
+                                        @click="setVolumeFromClick($event)"
+                                    >
+                                        <div class="volume-bar h-2 rounded-full" :style="`width: ${volume}%`"></div>
+                                    </div>
+                                    <input 
+                                        type="range" 
+                                        min="0" 
+                                        max="100" 
+                                        class="range-slider w-full h-2 opacity-0 absolute top-0 left-0 cursor-pointer"
+                                        x-model.number="volume"
+                                        @input="updateVolume()"
+                                    >
+                                </div>
+                                <i class="fas fa-volume-up opacity-75"></i>
+                                <span class="text-sm opacity-75 min-w-[3rem]" x-text="volume + '%'"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upload Section -->
+                <div class="card-gradient rounded-xl p-6 shadow-xl">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">
+                        <i class="fas fa-upload mr-2 text-purple-600"></i>
+                        Upload Music
+                    </h3>
+                    
+                    <div 
+                        class="drop-zone p-8 text-center"
+                        @drop="handleDrop($event)"
+                        @dragover.prevent="handleDragOver($event)"
+                        @dragleave="handleDragLeave($event)"
+                        @click="$refs.fileInput.click()"
+                    >
+                        <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                        <h4 class="text-lg font-semibold text-gray-700 mb-2">Upload Audio Files</h4>
+                        <p class="text-gray-500 mb-4">Drag and drop audio files or click to select</p>
+                        <button class="btn btn-primary">
+                            <i class="fas fa-folder-open mr-2"></i>
+                            Choose Files
+                        </button>
+                        <p class="text-xs text-gray-400 mt-2">Supports: MP3, WAV, OGG, M4A</p>
+                    </div>
+                    
+                    <input 
+                        type="file" 
+                        x-ref="fileInput"
+                        @change="handleFileSelect($event)"
+                        accept="audio/*"
+                        multiple
+                        class="hidden"
+                    >
+                </div>
+            </div>
+            
+            <!-- Playlist Sidebar -->
+            <div class="space-y-6">
+                
+                <!-- Playlist -->
+                <div class="card-gradient rounded-xl p-6 shadow-xl">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xl font-bold text-gray-800">
+                            <i class="fas fa-list mr-2 text-purple-600"></i>
+                            Playlist
+                        </h3>
+                        <div class="flex items-center space-x-2">
+                            <button 
+                                class="btn btn-sm btn-outline"
+                                @click="clearPlaylist()"
+                                x-show="playlist.length > 0"
+                            >
+                                <i class="fas fa-trash mr-1"></i>
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div x-show="playlist.length === 0" class="text-center py-8">
+                        <i class="fas fa-music text-4xl text-gray-300 mb-4"></i>
+                        <p class="text-gray-500">No tracks in playlist</p>
+                        <p class="text-sm text-gray-400">Upload audio files to get started</p>
+                    </div>
+                    
+                    <div x-show="playlist.length > 0" class="space-y-2 max-h-96 overflow-y-auto">
+                        <template x-for="(track, index) in playlist" :key="track.id">
+                            <div 
+                                class="track-item p-3 rounded-lg"
+                                :class="{ 'active': index === currentTrackIndex }"
+                                @click="selectTrack(index)"
+                            >
+                                <div class="flex items-center justify-between">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center space-x-2">
+                                            <div x-show="index === currentTrackIndex && isPlaying">
+                                                <div class="loading-spinner"></div>
+                                            </div>
+                                            <div x-show="!(index === currentTrackIndex && isPlaying)">
+                                                <i class="fas fa-music text-purple-600"></i>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="font-medium text-gray-800 truncate" x-text="track.name"></p>
+                                                <p class="text-sm text-gray-500" x-text="formatTime(track.duration || 0)"></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        class="btn btn-sm btn-ghost text-red-500 hover:bg-red-50"
+                                        @click.stop="removeTrack(index)"
+                                    >
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                
+                <!-- Player Settings -->
+                <div class="card-gradient rounded-xl p-6 shadow-xl">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">
+                        <i class="fas fa-cog mr-2 text-purple-600"></i>
+                        Settings
+                    </h3>
+                    
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-700">Shuffle Mode</span>
+                            <button 
+                                class="btn btn-sm"
+                                :class="shuffleMode ? 'btn-success' : 'btn-outline'"
+                                @click="toggleShuffle()"
+                            >
+                                <i class="fas fa-random mr-1"></i>
+                                <span x-text="shuffleMode ? 'On' : 'Off'"></span>
+                            </button>
+                        </div>
+                        
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-700">Repeat Mode</span>
+                            <button 
+                                class="btn btn-sm"
+                                :class="repeatMode !== 'none' ? 'btn-success' : 'btn-outline'"
+                                @click="toggleRepeat()"
+                            >
+                                <i :class="repeatMode === 'one' ? 'fas fa-redo-alt' : 'fas fa-repeat'" class="mr-1"></i>
+                                <span x-text="repeatMode === 'none' ? 'Off' : (repeatMode === 'one' ? 'One' : 'All')"></span>
+                            </button>
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <span class="text-gray-700">Volume: <span x-text="volume + '%'"></span></span>
+                            <input 
+                                type="range" 
+                                min="0" 
+                                max="100" 
+                                class="range range-primary w-full"
+                                x-model.number="volume"
+                                @input="updateVolume()"
+                            >
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Keyboard Shortcuts -->
+                <div class="card-gradient rounded-xl p-6 shadow-xl">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">
+                        <i class="fas fa-keyboard mr-2 text-purple-600"></i>
+                        Shortcuts
+                    </h3>
+                    
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Play/Pause</span>
+                            <span class="font-mono bg-gray-100 px-2 py-1 rounded">Space</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Next Track</span>
+                            <span class="font-mono bg-gray-100 px-2 py-1 rounded">→</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Previous Track</span>
+                            <span class="font-mono bg-gray-100 px-2 py-1 rounded">←</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Volume Up</span>
+                            <span class="font-mono bg-gray-100 px-2 py-1 rounded">↑</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Volume Down</span>
+                            <span class="font-mono bg-gray-100 px-2 py-1 rounded">↓</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Features Section -->
+        <div class="mt-12">
+            <h2 class="text-3xl font-bold text-center text-white mb-8">✨ Features</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="feature-card bg-white/90 backdrop-blur-sm rounded-xl p-6 text-center shadow-xl">
+                    <div class="text-4xl mb-4">🎵</div>
+                    <h3 class="text-lg font-bold text-gray-800 mb-2">Multiple Formats</h3>
+                    <p class="text-gray-600 text-sm">Support for MP3, WAV, OGG, M4A audio files</p>
+                </div>
+                
+                <div class="feature-card bg-white/90 backdrop-blur-sm rounded-xl p-6 text-center shadow-xl">
+                    <div class="text-4xl mb-4">📂</div>
+                    <h3 class="text-lg font-bold text-gray-800 mb-2">Playlist Management</h3>
+                    <p class="text-gray-600 text-sm">Create and manage your music playlists</p>
+                </div>
+                
+                <div class="feature-card bg-white/90 backdrop-blur-sm rounded-xl p-6 text-center shadow-xl">
+                    <div class="text-4xl mb-4">🔄</div>
+                    <h3 class="text-lg font-bold text-gray-800 mb-2">Playback Modes</h3>
+                    <p class="text-gray-600 text-sm">Shuffle, repeat, and continuous playback</p>
+                </div>
+                
+                <div class="feature-card bg-white/90 backdrop-blur-sm rounded-xl p-6 text-center shadow-xl">
+                    <div class="text-4xl mb-4">⌨️</div>
+                    <h3 class="text-lg font-bold text-gray-800 mb-2">Keyboard Controls</h3>
+                    <p class="text-gray-600 text-sm">Control playback with keyboard shortcuts</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio Element -->
+    <audio x-ref="audioPlayer" @ended="handleTrackEnd()" @timeupdate="updateProgress()" @loadedmetadata="updateDuration()"></audio>
+
+    <!-- Toast Notification -->
+    <div 
+        id="toast" 
+        class="toast-notification"
+        :class="toastType"
+        x-show="showToast"
+        x-transition:enter="transition ease-out duration-500"
+        x-transition:enter-start="opacity-0 transform translate-x-full"
+        x-transition:enter-end="opacity-100 transform translate-x-0"
+        x-transition:leave="transition ease-in duration-500"
+        x-transition:leave-start="opacity-100 transform translate-x-0"
+        x-transition:leave-end="opacity-0 transform translate-x-full"
+    >
+        <div class="flex items-center space-x-2">
+            <i :class="toastType === 'toast-success' ? 'fas fa-check' : 'fas fa-exclamation-triangle'"></i>
+            <span x-text="toastMessage"></span>
+        </div>
+    </div>
+
+    <script src="../../assets/js/utils.js"></script>
+    <script>
+        function musicPlayer() {
+            return {
+                // Audio state
+                playlist: [],
+                currentTrackIndex: 0,
+                currentTrack: null,
+                isPlaying: false,
+                currentTime: 0,
+                duration: 0,
+                volume: 70,
+                
+                // Playback modes
+                shuffleMode: false,
+                repeatMode: 'none', // 'none', 'all', 'one'
+                
+                // UI state
+                showToast: false,
+                toastMessage: '',
+                toastType: 'toast-success',
+                toastTimeout: null,
+                
+                // Audio element
+                audioPlayer: null,
+                
+                init() {
+                    this.audioPlayer = this.$refs.audioPlayer;
+                    this.audioPlayer.volume = this.volume / 100;
+                    
+                    // Load saved data
+                    this.loadSettings();
+                    
+                    // Keyboard shortcuts
+                    document.addEventListener('keydown', (e) => {
+                        if (e.target.tagName === 'INPUT') return;
+                        
+                        switch(e.code) {
+                            case 'Space':
+                                e.preventDefault();
+                                this.togglePlay();
+                                break;
+                            case 'ArrowRight':
+                                e.preventDefault();
+                                this.nextTrack();
+                                break;
+                            case 'ArrowLeft':
+                                e.preventDefault();
+                                this.previousTrack();
+                                break;
+                            case 'ArrowUp':
+                                e.preventDefault();
+                                this.volume = Math.min(100, this.volume + 5);
+                                this.updateVolume();
+                                break;
+                            case 'ArrowDown':
+                                e.preventDefault();
+                                this.volume = Math.max(0, this.volume - 5);
+                                this.updateVolume();
+                                break;
+                        }
+                    });
+                },
+                
+                handleFileSelect(event) {
+                    const files = Array.from(event.target.files);
+                    this.addFiles(files);
+                    // Clear the input so the same files can be selected again
+                    event.target.value = '';
+                },
+                
+                handleDrop(event) {
+                    event.preventDefault();
+                    event.target.classList.remove('drag-over');
+                    
+                    const files = Array.from(event.dataTransfer.files);
+                    const audioFiles = files.filter(file => file.type.startsWith('audio/'));
+                    
+                    if (audioFiles.length > 0) {
+                        this.addFiles(audioFiles);
+                    } else {
+                        this.showToastMessage('Please drop audio files only', 'toast-error');
+                    }
+                },
+                
+                handleDragOver(event) {
+                    event.preventDefault();
+                    event.target.classList.add('drag-over');
+                },
+                
+                handleDragLeave(event) {
+                    event.target.classList.remove('drag-over');
+                },
+                
+                async addFiles(files) {
+                    for (const file of files) {
+                        if (file.type.startsWith('audio/')) {
+                            const track = {
+                                id: Date.now() + Math.random(),
+                                name: file.name.replace(/\.[^/.]+$/, ''),
+                                file: file,
+                                url: URL.createObjectURL(file),
+                                duration: 0
+                            };
+                            
+                            // Get duration
+                            try {
+                                track.duration = await this.getAudioDuration(track.url);
+                            } catch (error) {
+                                console.warn('Could not get duration for', track.name);
+                            }
+                            
+                            this.playlist.push(track);
+                        }
+                    }
+                    
+                    if (this.playlist.length > 0 && (!this.currentTrack || this.currentTrackIndex >= this.playlist.length)) {
+                        this.selectTrack(0);
+                    }
+                    
+                    this.saveSettings();
+                    this.showToastMessage(`Added ${files.length} track(s) to playlist`, 'toast-success');
+                },
+                
+                getAudioDuration(url) {
+                    return new Promise((resolve, reject) => {
+                        const audio = new Audio();
+                        audio.addEventListener('loadedmetadata', () => {
+                            resolve(audio.duration);
+                        });
+                        audio.addEventListener('error', reject);
+                        audio.src = url;
+                    });
+                },
+                
+                selectTrack(index) {
+                    if (index >= 0 && index < this.playlist.length) {
+                        this.currentTrackIndex = index;
+                        this.currentTrack = this.playlist[index];
+                        this.audioPlayer.src = this.currentTrack.url;
+                        this.audioPlayer.load();
+                        
+                        if (this.isPlaying) {
+                            this.audioPlayer.play();
+                        }
+                        
+                        this.saveSettings();
+                    }
+                },
+                
+                togglePlay() {
+                    if (!this.currentTrack) return;
+                    
+                    if (this.isPlaying) {
+                        this.audioPlayer.pause();
+                        this.isPlaying = false;
+                    } else {
+                        this.audioPlayer.play();
+                        this.isPlaying = true;
+                    }
+                },
+                
+                nextTrack() {
+                    if (this.playlist.length === 0) return;
+                    
+                    let nextIndex;
+                    
+                    if (this.shuffleMode) {
+                        nextIndex = Math.floor(Math.random() * this.playlist.length);
+                    } else {
+                        nextIndex = (this.currentTrackIndex + 1) % this.playlist.length;
+                    }
+                    
+                    this.selectTrack(nextIndex);
+                },
+                
+                previousTrack() {
+                    if (this.playlist.length === 0) return;
+                    
+                    let prevIndex;
+                    
+                    if (this.shuffleMode) {
+                        prevIndex = Math.floor(Math.random() * this.playlist.length);
+                    } else {
+                        prevIndex = this.currentTrackIndex - 1;
+                        if (prevIndex < 0) prevIndex = this.playlist.length - 1;
+                    }
+                    
+                    this.selectTrack(prevIndex);
+                },
+                
+                handleTrackEnd() {
+                    if (this.repeatMode === 'one') {
+                        this.audioPlayer.currentTime = 0;
+                        this.audioPlayer.play();
+                    } else if (this.repeatMode === 'all' || this.currentTrackIndex < this.playlist.length - 1) {
+                        this.nextTrack();
+                    } else {
+                        this.isPlaying = false;
+                    }
+                },
+                
+                updateProgress() {
+                    this.currentTime = this.audioPlayer.currentTime;
+                },
+                
+                updateDuration() {
+                    this.duration = this.audioPlayer.duration || 0;
+                },
+                
+                seekTo(event) {
+                    if (!this.currentTrack || !this.duration) return;
+                    
+                    const rect = event.target.getBoundingClientRect();
+                    const percent = (event.clientX - rect.left) / rect.width;
+                    const seekTime = percent * this.duration;
+                    
+                    this.audioPlayer.currentTime = seekTime;
+                },
+                
+                updateVolume() {
+                    this.audioPlayer.volume = this.volume / 100;
+                    this.saveSettings();
+                },
+                
+                setVolumeFromClick(event) {
+                    const rect = event.target.getBoundingClientRect();
+                    const percent = (event.clientX - rect.left) / rect.width;
+                    this.volume = Math.max(0, Math.min(100, Math.round(percent * 100)));
+                    this.updateVolume();
+                },
+                
+                toggleShuffle() {
+                    this.shuffleMode = !this.shuffleMode;
+                    this.saveSettings();
+                    this.showToastMessage(`Shuffle ${this.shuffleMode ? 'enabled' : 'disabled'}`, 'toast-success');
+                },
+                
+                toggleRepeat() {
+                    if (this.repeatMode === 'none') {
+                        this.repeatMode = 'all';
+                    } else if (this.repeatMode === 'all') {
+                        this.repeatMode = 'one';
+                    } else {
+                        this.repeatMode = 'none';
+                    }
+                    
+                    this.saveSettings();
+                    this.showToastMessage(`Repeat mode: ${this.repeatMode}`, 'toast-success');
+                },
+                
+                removeTrack(index) {
+                    if (index === this.currentTrackIndex) {
+                        this.audioPlayer.pause();
+                        this.isPlaying = false;
+                        this.currentTrack = null;
+                    }
+                    
+                    // Revoke object URL to free memory
+                    if (this.playlist[index]?.url) {
+                        URL.revokeObjectURL(this.playlist[index].url);
+                    }
+                    
+                    this.playlist.splice(index, 1);
+                    
+                    if (index < this.currentTrackIndex) {
+                        this.currentTrackIndex--;
+                    } else if (index === this.currentTrackIndex && this.playlist.length > 0) {
+                        this.selectTrack(Math.min(this.currentTrackIndex, this.playlist.length - 1));
+                    }
+                    
+                    this.saveSettings();
+                    this.showToastMessage('Track removed from playlist', 'toast-success');
+                },
+                
+                clearPlaylist() {
+                    // Revoke all object URLs
+                    this.playlist.forEach(track => {
+                        if (track.url) URL.revokeObjectURL(track.url);
+                    });
+                    
+                    // Stop and clear audio player
+                    this.audioPlayer.pause();
+                    this.audioPlayer.src = '';
+                    this.audioPlayer.load();
+                    
+                    // Reset all state
+                    this.playlist = [];
+                    this.currentTrack = null;
+                    this.currentTrackIndex = 0;
+                    this.isPlaying = false;
+                    this.currentTime = 0;
+                    this.duration = 0;
+                    
+                    this.saveSettings();
+                    this.showToastMessage('Playlist cleared', 'toast-success');
+                },
+                
+                formatTime(seconds) {
+                    if (!seconds || isNaN(seconds)) return '0:00';
+                    
+                    const mins = Math.floor(seconds / 60);
+                    const secs = Math.floor(seconds % 60);
+                    return `${mins}:${secs.toString().padStart(2, '0')}`;
+                },
+                
+                saveSettings() {
+                    const settings = {
+                        volume: this.volume,
+                        shuffleMode: this.shuffleMode,
+                        repeatMode: this.repeatMode,
+                        currentTrackIndex: this.currentTrackIndex
+                    };
+                    
+                    localStorage.setItem('musicPlayerSettings', JSON.stringify(settings));
+                },
+                
+                loadSettings() {
+                    const saved = localStorage.getItem('musicPlayerSettings');
+                    if (saved) {
+                        const settings = JSON.parse(saved);
+                        this.volume = settings.volume || 70;
+                        this.shuffleMode = settings.shuffleMode || false;
+                        this.repeatMode = settings.repeatMode || 'none';
+                        this.currentTrackIndex = settings.currentTrackIndex || 0;
+                    }
+                },
+                
+                showToastMessage(message, type = 'toast-success') {
+                    // Clear any existing timeout
+                    if (this.toastTimeout) {
+                        clearTimeout(this.toastTimeout);
+                    }
+                    
+                    this.toastMessage = message;
+                    this.toastType = type;
+                    this.showToast = true;
+                    
+                    this.toastTimeout = setTimeout(() => {
+                        this.showToast = false;
+                    }, 3000);
+                }
+            }
+        }
+    </script>
+</body>
+</html>

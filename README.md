@@ -46,6 +46,7 @@ This project is a showcase of multiple mini-tools and utilities built within the
 | 🔐 **Password Generator** | Generate cryptographically secure passwords with strength analysis | ✅ Complete | Crypto API & Security Analytics |
 | 🌦️ **Weather Dashboard** | Local weather information and forecasts | ✅ Complete | API Integration & Data Visualization |
 | 📷 **Image Filter Studio** | Apply filters and effects to uploaded images | ✅ Complete | Canvas API & Image Processing |
+| 🎵 **Music Player** | Simple audio player with playlist support | ✅ Complete | Web Audio API & Media Controls |
 
 ### 🎯 Tool Features
 
@@ -89,6 +90,17 @@ This project is a showcase of multiple mini-tools and utilities built within the
 - Download edited images
 - Filter history system
 - Image information display
+
+#### 🎵 Music Player
+- Multiple audio format support (MP3, WAV, OGG, M4A)
+- Drag & drop file upload
+- Playlist management with track organization
+- Playback controls (Play, Pause, Previous, Next)
+- Shuffle and repeat modes
+- Volume control with visual feedback
+- Keyboard shortcuts for all functions
+- Progress tracking with seek functionality
+- Settings persistence across sessions
 
 ## 🚀 Quick Start
 

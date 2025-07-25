@@ -3,7 +3,7 @@ function hubApp() {
     return {
         searchTerm: '',
         filterStatus: 'all',
-        completedTools: 7,
+        completedTools: 8,
         
         // Sample tools data - will be updated as real tools are built
         tools: [
@@ -82,8 +82,8 @@ function hubApp() {
                 name: 'Music Player',
                 description: 'Simple audio player with playlist support',
                 icon: '🎵',
-                status: 'planned',
-                statusLabel: 'Planned',
+                status: 'complete',
+                statusLabel: 'Complete',
                 technologies: ['Web Audio API', 'Playlist', 'Controls'],
                 url: './tools/music-player/'
             },
