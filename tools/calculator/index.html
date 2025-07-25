@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculator Pro - Vibe Coding</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- DaisyUI -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@3.9.4/dist/full.css" rel="stylesheet" type="text/css" />
+    
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#8B5CF6',
+                        secondary: '#06B6D4',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50" x-data="calculatorApp()">
+    
+    <!-- Header -->
+    <header class="bg-white/80 backdrop-blur-md shadow-lg">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <a href="../../index.html" class="btn btn-ghost gap-2">
+                        <i class="fas fa-arrow-left"></i>
+                        Back to Hub
+                    </a>
+                    <div class="divider divider-horizontal"></div>
+                    <h1 class="text-2xl font-bold text-gray-800">
+                        <i class="fas fa-calculator text-primary"></i>
+                        Calculator Pro
+                    </h1>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Calculator -->
+    <main class="container mx-auto px-4 py-8">
+        <div class="max-w-md mx-auto">
+            <div class="card bg-white shadow-2xl">
+                <div class="card-body p-6">
+                    
+                    <!-- Display -->
+                    <div class="mb-6">
+                        <div class="bg-gray-900 rounded-lg p-4 text-right">
+                            <div class="text-gray-400 text-sm h-6" x-text="previousOperand"></div>
+                            <div class="text-white text-3xl font-mono" x-text="currentOperand || '0'"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Buttons Grid -->
+                    <div class="grid grid-cols-4 gap-3">
+                        <!-- Clear and Operations -->
+                        <button @click="clear()" 
+                                class="btn btn-error col-span-2 text-white">
+                            Clear
+                        </button>
+                        <button @click="deleteLast()" 
+                                class="btn btn-warning text-white">
+                            <i class="fas fa-backspace"></i>
+                        </button>
+                        <button @click="chooseOperation('÷')" 
+                                class="btn btn-primary text-white">
+                            ÷
+                        </button>
+                        
+                        <!-- Numbers Row 1 -->
+                        <button @click="appendNumber('7')" 
+                                class="btn btn-outline">7</button>
+                        <button @click="appendNumber('8')" 
+                                class="btn btn-outline">8</button>
+                        <button @click="appendNumber('9')" 
+                                class="btn btn-outline">9</button>
+                        <button @click="chooseOperation('×')" 
+                                class="btn btn-primary text-white">×</button>
+                        
+                        <!-- Numbers Row 2 -->
+                        <button @click="appendNumber('4')" 
+                                class="btn btn-outline">4</button>
+                        <button @click="appendNumber('5')" 
+                                class="btn btn-outline">5</button>
+                        <button @click="appendNumber('6')" 
+                                class="btn btn-outline">6</button>
+                        <button @click="chooseOperation('-')" 
+                                class="btn btn-primary text-white">-</button>
+                        
+                        <!-- Numbers Row 3 -->
+                        <button @click="appendNumber('1')" 
+                                class="btn btn-outline">1</button>
+                        <button @click="appendNumber('2')" 
+                                class="btn btn-outline">2</button>
+                        <button @click="appendNumber('3')" 
+                                class="btn btn-outline">3</button>
+                        <button @click="chooseOperation('+')" 
+                                class="btn btn-primary text-white">+</button>
+                        
+                        <!-- Bottom Row -->
+                        <button @click="appendNumber('0')" 
+                                class="btn btn-outline col-span-2">0</button>
+                        <button @click="appendNumber('.')" 
+                                class="btn btn-outline">.</button>
+                        <button @click="compute()" 
+                                class="btn btn-secondary text-white">=</button>
+                    </div>
+                    
+                    <!-- History -->
+                    <div class="mt-6" x-show="history.length > 0">
+                        <div class="divider">History</div>
+                        <div class="max-h-32 overflow-y-auto">
+                            <template x-for="entry in history.slice(-5)" :key="entry.id">
+                                <div class="text-sm text-gray-600 py-1 hover:bg-gray-50 px-2 rounded cursor-pointer"
+                                     @click="loadFromHistory(entry)"
+                                     x-text="entry.expression + ' = ' + entry.result">
+                                </div>
+                            </template>
+                        </div>
+                        <button @click="clearHistory()" 
+                                class="btn btn-ghost btn-sm w-full mt-2">
+                            Clear History
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Features Info -->
+            <div class="mt-6 text-center text-gray-600">
+                <p class="text-sm">
+                    <i class="fas fa-keyboard"></i>
+                    Keyboard supported • 
+                    <i class="fas fa-history"></i>
+                    Auto-save history
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function calculatorApp() {
+            return {
+                currentOperand: '0',
+                previousOperand: '',
+                operation: undefined,
+                history: JSON.parse(localStorage.getItem('calculatorHistory') || '[]'),
+                
+                init() {
+                    // Keyboard support
+                    document.addEventListener('keydown', (e) => {
+                        if (e.key >= '0' && e.key <= '9') {
+                            this.appendNumber(e.key);
+                        } else if (e.key === '.') {
+                            this.appendNumber('.');
+                        } else if (e.key === '+') {
+                            this.chooseOperation('+');
+                        } else if (e.key === '-') {
+                            this.chooseOperation('-');
+                        } else if (e.key === '*') {
+                            this.chooseOperation('×');
+                        } else if (e.key === '/') {
+                            e.preventDefault();
+                            this.chooseOperation('÷');
+                        } else if (e.key === 'Enter' || e.key === '=') {
+                            this.compute();
+                        } else if (e.key === 'Escape') {
+                            this.clear();
+                        } else if (e.key === 'Backspace') {
+                            this.deleteLast();
+                        }
+                    });
+                },
+                
+                clear() {
+                    this.currentOperand = '0';
+                    this.previousOperand = '';
+                    this.operation = undefined;
+                },
+                
+                deleteLast() {
+                    if (this.currentOperand.length === 1) {
+                        this.currentOperand = '0';
+                    } else {
+                        this.currentOperand = this.currentOperand.slice(0, -1);
+                    }
+                },
+                
+                appendNumber(number) {
+                    if (number === '.' && this.currentOperand.includes('.')) return;
+                    if (this.currentOperand === '0' && number !== '.') {
+                        this.currentOperand = number;
+                    } else {
+                        this.currentOperand += number;
+                    }
+                },
+                
+                chooseOperation(operation) {
+                    if (this.currentOperand === '') return;
+                    if (this.previousOperand !== '') {
+                        this.compute();
+                    }
+                    this.operation = operation;
+                    this.previousOperand = this.currentOperand + ' ' + operation;
+                    this.currentOperand = '';
+                },
+                
+                compute() {
+                    let computation;
+                    const prev = parseFloat(this.previousOperand);
+                    const current = parseFloat(this.currentOperand);
+                    if (isNaN(prev) || isNaN(current)) return;
+                    
+                    switch (this.operation) {
+                        case '+':
+                            computation = prev + current;
+                            break;
+                        case '-':
+                            computation = prev - current;
+                            break;
+                        case '×':
+                            computation = prev * current;
+                            break;
+                        case '÷':
+                            if (current === 0) {
+                                alert('Cannot divide by zero!');
+                                return;
+                            }
+                            computation = prev / current;
+                            break;
+                        default:
+                            return;
+                    }
+                    
+                    // Add to history
+                    const expression = this.previousOperand + ' ' + this.currentOperand;
+                    this.addToHistory(expression, computation);
+                    
+                    this.currentOperand = computation.toString();
+                    this.operation = undefined;
+                    this.previousOperand = '';
+                },
+                
+                addToHistory(expression, result) {
+                    const entry = {
+                        id: Date.now(),
+                        expression: expression,
+                        result: result,
+                        timestamp: new Date().toLocaleString()
+                    };
+                    this.history.unshift(entry);
+                    
+                    // Keep only last 50 entries
+                    if (this.history.length > 50) {
+                        this.history = this.history.slice(0, 50);
+                    }
+                    
+                    // Save to localStorage
+                    localStorage.setItem('calculatorHistory', JSON.stringify(this.history));
+                },
+                
+                loadFromHistory(entry) {
+                    this.currentOperand = entry.result.toString();
+                    this.previousOperand = '';
+                    this.operation = undefined;
+                },
+                
+                clearHistory() {
+                    this.history = [];
+                    localStorage.removeItem('calculatorHistory');
+                }
+            }
+        }
+    </script>
+</body>
+</html>

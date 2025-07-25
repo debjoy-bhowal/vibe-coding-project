@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown Preview - Vibe Coding</title>
+    <meta name="description" content="Live markdown editor with real-time preview and export options">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- DaisyUI -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@3.9.4/dist/full.css" rel="stylesheet" type="text/css" />
+    
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Marked.js for Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
+    
+    <!-- Highlight.js for syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    
+    <!-- Custom CSS -->
+    <style>
+        .editor-container {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .preview-content {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.7;
+        }
+        
+        .preview-content h1 { 
+            font-size: 1.875rem; 
+            font-weight: bold; 
+            margin-top: 1.5rem; 
+            margin-bottom: 1rem; 
+            color: #111827; 
+            border-bottom: 1px solid #d1d5db; 
+            padding-bottom: 0.5rem; 
+        }
+        .preview-content h2 { 
+            font-size: 1.5rem; 
+            font-weight: bold; 
+            margin-top: 1.5rem; 
+            margin-bottom: 0.75rem; 
+            color: #111827; 
+            border-bottom: 1px solid #e5e7eb; 
+            padding-bottom: 0.25rem; 
+        }
+        .preview-content h3 { 
+            font-size: 1.25rem; 
+            font-weight: 600; 
+            margin-top: 1.25rem; 
+            margin-bottom: 0.75rem; 
+            color: #111827; 
+        }
+        .preview-content h4 { 
+            font-size: 1.125rem; 
+            font-weight: 600; 
+            margin-top: 1rem; 
+            margin-bottom: 0.5rem; 
+            color: #111827; 
+        }
+        .preview-content h5 { 
+            font-size: 1rem; 
+            font-weight: 600; 
+            margin-top: 0.75rem; 
+            margin-bottom: 0.5rem; 
+            color: #111827; 
+        }
+        .preview-content h6 { 
+            font-size: 0.875rem; 
+            font-weight: 600; 
+            margin-top: 0.5rem; 
+            margin-bottom: 0.5rem; 
+            color: #374151; 
+        }
+        
+        .preview-content p { 
+            margin-bottom: 1rem; 
+            color: #1f2937; 
+            line-height: 1.625; 
+        }
+        .preview-content blockquote { 
+            border-left: 4px solid #d1d5db; 
+            padding-left: 1rem; 
+            padding-top: 0.25rem; 
+            padding-bottom: 0.25rem; 
+            margin-bottom: 1rem; 
+            background-color: #f9fafb; 
+            color: #374151; 
+            font-style: normal; 
+        }
+        .preview-content ul { 
+            list-style-type: disc; 
+            margin-left: 1.5rem; 
+            margin-bottom: 1rem; 
+            color: #1f2937; 
+        }
+        .preview-content ol { 
+            list-style-type: decimal; 
+            margin-left: 1.5rem; 
+            margin-bottom: 1rem; 
+            color: #1f2937; 
+        }
+        .preview-content li { 
+            margin-left: 0; 
+            margin-bottom: 0.25rem; 
+            line-height: 1.625; 
+        }
+        
+        .preview-content code { 
+            background-color: #f3f4f6; 
+            padding: 0.25rem 0.5rem; 
+            border-radius: 0.25rem; 
+            font-size: 0.875rem; 
+            font-family: Monaco, Menlo, 'Ubuntu Mono', monospace; 
+            color: #dc2626; 
+        }
+        .preview-content pre { 
+            background-color: #1f2937; 
+            color: #f9fafb; 
+            padding: 1rem; 
+            border-radius: 0.5rem; 
+            margin-bottom: 1rem; 
+            overflow-x: auto; 
+        }
+        .preview-content pre code { 
+            background-color: transparent; 
+            padding: 0; 
+            color: #f9fafb; 
+        }
+        
+        .preview-content table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-bottom: 1rem; 
+        }
+        .preview-content th { 
+            background-color: #f3f4f6; 
+            border: 1px solid #d1d5db; 
+            padding: 0.75rem; 
+            text-align: left; 
+            font-weight: 600; 
+        }
+        .preview-content td { 
+            border: 1px solid #d1d5db; 
+            padding: 0.75rem; 
+        }
+        
+        .preview-content a { 
+            color: #2563eb; 
+            text-decoration: underline; 
+        }
+        .preview-content a:hover { 
+            color: #1d4ed8; 
+        }
+        .preview-content img { 
+            max-width: 100%; 
+            height: auto; 
+            border-radius: 0.5rem; 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); 
+            margin-bottom: 1rem; 
+        }
+        .preview-content hr { 
+            border-top: 2px solid #d1d5db; 
+            margin: 2rem 0; 
+            border-bottom: none;
+            border-left: none;
+            border-right: none;
+        }
+        
+        .sync-scroll {
+            overflow-y: auto;
+            max-height: calc(100vh - 320px);
+            min-height: 400px;
+        }
+        
+        .editor-toolbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        @media (max-width: 768px) {
+            .sync-scroll {
+                max-height: 400px;
+            }
+        }
+        
+        .word-count {
+            font-size: 12px;
+            color: #6b7280;
+        }
+        
+        .markdown-templates {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#8B5CF6',
+                        secondary: '#06B6D4',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50" x-data="markdownPreviewApp()">
+    
+    <!-- Header -->
+    <header class="bg-white/80 backdrop-blur-md shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <a href="../../index.html" class="btn btn-ghost gap-2 hover:text-primary">
+                        <i class="fas fa-arrow-left"></i>
+                        Back to Hub
+                    </a>
+                    <div class="divider divider-horizontal"></div>
+                    <h1 class="text-2xl font-bold text-gray-800">
+                        <i class="fas fa-markdown text-primary"></i>
+                        Markdown Preview
+                    </h1>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="word-count" x-text="`${wordCount} words • ${charCount} chars`"></div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Toolbar -->
+    <div class="editor-toolbar sticky top-[72px] z-40 px-4 py-2">
+        <div class="container mx-auto">
+            <div class="flex flex-wrap items-center gap-2">
+                <!-- File Operations -->
+                <div class="flex items-center gap-1 border-r pr-2 mr-2">
+                    <button @click="newDocument()" class="btn btn-ghost btn-xs gap-1" title="New Document">
+                        <i class="fas fa-file"></i>
+                        New
+                    </button>
+                    <label class="btn btn-ghost btn-xs gap-1 cursor-pointer" title="Open File">
+                        <i class="fas fa-folder-open"></i>
+                        Open
+                        <input type="file" class="hidden" accept=".md,.txt" @change="openFile($event)">
+                    </label>
+                    <button @click="saveFile()" class="btn btn-ghost btn-xs gap-1" title="Save File">
+                        <i class="fas fa-save"></i>
+                        Save
+                    </button>
+                </div>
+                
+                <!-- Formatting -->
+                <div class="flex items-center gap-1 border-r pr-2 mr-2">
+                    <button @click="insertMarkdown('**', '**')" class="btn btn-ghost btn-xs" title="Bold">
+                        <i class="fas fa-bold"></i>
+                    </button>
+                    <button @click="insertMarkdown('*', '*')" class="btn btn-ghost btn-xs" title="Italic">
+                        <i class="fas fa-italic"></i>
+                    </button>
+                    <button @click="insertMarkdown('`', '`')" class="btn btn-ghost btn-xs" title="Code">
+                        <i class="fas fa-code"></i>
+                    </button>
+                    <button @click="insertMarkdown('[', '](url)')" class="btn btn-ghost btn-xs" title="Link">
+                        <i class="fas fa-link"></i>
+                    </button>
+                </div>
+                
+                <!-- Headers -->
+                <div class="flex items-center gap-1 border-r pr-2 mr-2">
+                    <button @click="insertHeader(1)" class="btn btn-ghost btn-xs">H1</button>
+                    <button @click="insertHeader(2)" class="btn btn-ghost btn-xs">H2</button>
+                    <button @click="insertHeader(3)" class="btn btn-ghost btn-xs">H3</button>
+                </div>
+                
+                <!-- Lists -->
+                <div class="flex items-center gap-1 border-r pr-2 mr-2">
+                    <button @click="insertList('unordered')" class="btn btn-ghost btn-xs" title="Bullet List">
+                        <i class="fas fa-list-ul"></i>
+                    </button>
+                    <button @click="insertList('ordered')" class="btn btn-ghost btn-xs" title="Numbered List">
+                        <i class="fas fa-list-ol"></i>
+                    </button>
+                    <button @click="insertMarkdown('> ', '')" class="btn btn-ghost btn-xs" title="Quote">
+                        <i class="fas fa-quote-left"></i>
+                    </button>
+                </div>
+                
+                <!-- Export -->
+                <div class="flex items-center gap-1">
+                    <button @click="exportHTML()" class="btn btn-outline btn-xs gap-1">
+                        <i class="fas fa-file-code"></i>
+                        HTML
+                    </button>
+                    <button @click="exportPDF()" class="btn btn-outline btn-xs gap-1">
+                        <i class="fas fa-file-pdf"></i>
+                        PDF
+                    </button>
+                    <button @click="showTemplates = !showTemplates" class="btn btn-outline btn-xs gap-1">
+                        <i class="fas fa-template"></i>
+                        Templates
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Templates Panel -->
+    <div class="container mx-auto px-4 py-2" x-show="showTemplates" x-transition>
+        <div class="card bg-white shadow-lg mb-4">
+            <div class="card-body py-4">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-semibold">Document Templates</h3>
+                    <button @click="showTemplates = false" class="btn btn-ghost btn-xs">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-2 markdown-templates">
+                    <template x-for="template in templates">
+                        <button @click="loadTemplate(template)" 
+                                class="btn btn-outline btn-sm text-left h-auto py-2 px-3">
+                            <div>
+                                <div class="font-semibold text-xs" x-text="template.name"></div>
+                                <div class="text-xs opacity-70" x-text="template.description"></div>
+                            </div>
+                        </button>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Editor -->
+    <main class="container mx-auto px-4 pb-8 pt-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            <!-- Editor Panel -->
+            <div class="card bg-white shadow-xl">
+                <div class="card-body p-0">
+                    <div class="flex justify-between items-center p-4 border-b">
+                        <h2 class="card-title text-lg">
+                            <i class="fas fa-edit text-primary"></i>
+                            Editor
+                        </h2>
+                        <div class="flex items-center gap-2">
+                            <button @click="toggleFullscreen('editor')" class="btn btn-ghost btn-xs">
+                                <i class="fas fa-expand"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="editor-container">
+                        <textarea 
+                            x-model="markdownText"
+                            x-ref="editor"
+                            @input="updatePreview(); updateWordCount()"
+                            @scroll="syncScroll('editor')"
+                            class="textarea textarea-ghost w-full sync-scroll resize-none border-none focus:outline-none"
+                            placeholder="# Welcome to Markdown Preview&#10;&#10;Start typing your markdown here...&#10;&#10;## Features&#10;- Live preview&#10;- Syntax highlighting&#10;- Export to HTML/PDF&#10;- Document templates&#10;- Auto-save&#10;&#10;**Bold text** and *italic text*&#10;&#10;```javascript&#10;console.log('Hello, World!');&#10;```&#10;&#10;> This is a blockquote&#10;&#10;1. Numbered list&#10;2. Another item&#10;&#10;- Bullet point&#10;- Another bullet&#10;&#10;[Link example](https://example.com)"
+                            rows="25"></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Preview Panel -->
+            <div class="card bg-white shadow-xl">
+                <div class="card-body p-0">
+                    <div class="flex justify-between items-center p-4 border-b">
+                        <h2 class="card-title text-lg">
+                            <i class="fas fa-eye text-primary"></i>
+                            Preview
+                        </h2>
+                        <div class="flex items-center gap-2">
+                            <button @click="copyHTML()" class="btn btn-ghost btn-xs gap-1">
+                                <i class="fas fa-copy"></i>
+                                Copy HTML
+                            </button>
+                            <button @click="toggleFullscreen('preview')" class="btn btn-ghost btn-xs">
+                                <i class="fas fa-expand"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="preview-content sync-scroll p-4" 
+                         x-ref="preview" 
+                         x-html="htmlPreview"
+                         @scroll="syncScroll('preview')">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Auto-save Status -->
+        <div class="mt-4 text-center">
+            <div class="text-xs text-gray-500" x-show="autoSaveStatus" x-text="autoSaveStatus"></div>
+        </div>
+    </main>
+
+    <!-- Fullscreen Modal -->
+    <div class="modal" :class="{ 'modal-open': fullscreenMode }">
+        <div class="modal-box w-11/12 max-w-7xl h-5/6 p-0 max-h-[90vh]">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h3 class="font-bold text-lg">
+                    <span x-text="fullscreenTitle">Fullscreen View</span>
+                </h3>
+                <button @click="closeFullscreen()" class="btn btn-ghost btn-sm">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-4 h-full overflow-hidden" x-show="fullscreenMode === 'editor'">
+                <textarea 
+                    x-model="markdownText"
+                    @input="updatePreview(); updateWordCount()"
+                    class="textarea textarea-ghost w-full h-full resize-none border-none focus:outline-none"
+                    placeholder="Start typing your markdown here..."></textarea>
+            </div>
+            <div class="preview-content p-4 h-full overflow-y-auto" 
+                 x-show="fullscreenMode === 'preview'"
+                 x-html="htmlPreview">
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast toast-top toast-end z-[60]" x-show="showToast" x-transition>
+        <div class="alert" :class="toastType === 'success' ? 'alert-success' : 'alert-error'">
+            <i :class="toastType === 'success' ? 'fas fa-check' : 'fas fa-exclamation-triangle'"></i>
+            <span x-text="toastMessage"></span>
+        </div>
+    </div>
+
+    <script src="../../assets/js/utils.js"></script>
+    <script>
+        function markdownPreviewApp() {
+            return {
+                markdownText: '',
+                htmlPreview: '',
+                showTemplates: false,
+                fullscreenMode: null,
+                fullscreenTitle: '',
+                wordCount: 0,
+                charCount: 0,
+                showToast: false,
+                toastMessage: '',
+                toastType: 'success',
+                autoSaveStatus: '',
+                currentFileName: 'untitled.md',
+                
+                templates: [
+                    {
+                        name: 'README',
+                        description: 'Project documentation',
+                        content: '# Project Name\\n\\n## Description\\nBrief description of your project.\\n\\n## Installation\\n```bash\\nnpm install\\n```\\n\\n## Usage\\nHow to use your project.\\n\\n## Contributing\\nGuidelines for contributing.\\n\\n## License\\nMIT License'
+                    },
+                    {
+                        name: 'Blog Post',
+                        description: 'Article template',
+                        content: '# Blog Post Title\\n\\n*Published on ' + new Date().toLocaleDateString() + '*\\n\\n## Introduction\\nHook your readers with an engaging introduction.\\n\\n## Main Content\\nYour main points go here.\\n\\n### Subheading\\nSupporting details and examples.\\n\\n## Conclusion\\nWrap up your thoughts.\\n\\n---\\n*Tags: #tag1 #tag2 #tag3*'
+                    },
+                    {
+                        name: 'Meeting Notes',
+                        description: 'Meeting documentation',
+                        content: '# Meeting Notes - ' + new Date().toLocaleDateString() + '\\n\\n## Attendees\\n- Name 1\\n- Name 2\\n- Name 3\\n\\n## Agenda\\n1. Item 1\\n2. Item 2\\n3. Item 3\\n\\n## Discussion Points\\n### Topic 1\\nNotes about topic 1...\\n\\n### Topic 2\\nNotes about topic 2...\\n\\n## Action Items\\n- [ ] Task 1 (Assignee: Name)\\n- [ ] Task 2 (Assignee: Name)\\n- [ ] Task 3 (Assignee: Name)\\n\\n## Next Meeting\\nDate: \\nTime: \\nLocation:'
+                    },
+                    {
+                        name: 'API Documentation',
+                        description: 'API reference guide',
+                        content: '# API Documentation\\n\\n## Overview\\nBrief description of the API.\\n\\n## Authentication\\nHow to authenticate with the API.\\n\\n## Base URL\\n```\\nhttps://api.example.com/v1\\n```\\n\\n## Endpoints\\n\\n### GET /users\\nGet all users.\\n\\n**Parameters:**\\n- `limit` (optional): Number of users to return\\n- `offset` (optional): Starting position\\n\\n**Response:**\\n```json\\n{\\n  "users": [\\n    {\\n      "id": 1,\\n      "name": "John Doe",\\n      "email": "john@example.com"\\n    }\\n  ]\\n}\\n```\\n\\n### POST /users\\nCreate a new user.\\n\\n**Request Body:**\\n```json\\n{\\n  "name": "Jane Doe",\\n  "email": "jane@example.com"\\n}\\n```\\n\\n## Error Codes\\n- `400` - Bad Request\\n- `401` - Unauthorized\\n- `404` - Not Found\\n- `500` - Internal Server Error'
+                    },
+                    {
+                        name: 'Changelog',
+                        description: 'Version history',
+                        content: '# Changelog\\n\\nAll notable changes to this project will be documented in this file.\\n\\n## [Unreleased]\\n### Added\\n- New feature description\\n\\n### Changed\\n- Changed feature description\\n\\n### Fixed\\n- Bug fix description\\n\\n## [1.0.0] - ' + new Date().toISOString().split('T')[0] + '\\n### Added\\n- Initial release\\n- Feature 1\\n- Feature 2\\n\\n### Changed\\n- Updated documentation\\n\\n### Fixed\\n- Fixed critical bug\\n\\n## [0.1.0] - ' + new Date(Date.now() - 30*24*60*60*1000).toISOString().split('T')[0] + '\\n### Added\\n- Beta release\\n- Basic functionality'
+                    },
+                    {
+                        name: 'Tutorial',
+                        description: 'Step-by-step guide',
+                        content: '# Tutorial: How to [Title]\\n\\n## Prerequisites\\n- Requirement 1\\n- Requirement 2\\n- Requirement 3\\n\\n## Overview\\nWhat you\'ll learn in this tutorial.\\n\\n## Step 1: Getting Started\\nDetailed instructions for the first step.\\n\\n```bash\\n# Example command\\nnpm init\\n```\\n\\n## Step 2: Configuration\\nHow to configure the project.\\n\\n```javascript\\n// Example code\\nconst config = {\\n  option1: \'value1\',\\n  option2: \'value2\'\\n};\\n```\\n\\n## Step 3: Implementation\\nCore implementation details.\\n\\n> **Note:** Important information about this step.\\n\\n## Step 4: Testing\\nHow to test your implementation.\\n\\n## Troubleshooting\\nCommon issues and solutions.\\n\\n### Issue 1\\nProblem description and solution.\\n\\n### Issue 2\\nProblem description and solution.\\n\\n## Conclusion\\nSummary of what was accomplished.\\n\\n## Next Steps\\n- Additional resource 1\\n- Additional resource 2\\n- Advanced topics'
+                    }
+                ],
+                
+                init() {
+                    this.loadAutoSave();
+                    this.updatePreview();
+                    this.updateWordCount();
+                    this.setupAutoSave();
+                    this.setupMarkedOptions();
+                },
+                
+                setupMarkedOptions() {
+                    marked.setOptions({
+                        highlight: function(code, lang) {
+                            if (lang && hljs.getLanguage(lang)) {
+                                try {
+                                    return hljs.highlight(code, { language: lang }).value;
+                                } catch (err) {}
+                            }
+                            try {
+                                return hljs.highlightAuto(code).value;
+                            } catch (err) {}
+                            return code;
+                        },
+                        breaks: true,
+                        gfm: true
+                    });
+                },
+                
+                updatePreview() {
+                    try {
+                        this.htmlPreview = marked.parse(this.markdownText || '');
+                    } catch (error) {
+                        this.htmlPreview = '<p class="text-red-500">Error parsing markdown: ' + error.message + '</p>';
+                    }
+                },
+                
+                updateWordCount() {
+                    const text = this.markdownText || '';
+                    this.charCount = text.length;
+                    this.wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+                },
+                
+                insertMarkdown(before, after) {
+                    const textarea = this.$refs.editor;
+                    const start = textarea.selectionStart;
+                    const end = textarea.selectionEnd;
+                    const selectedText = this.markdownText.substring(start, end);
+                    
+                    const replacement = before + selectedText + after;
+                    this.markdownText = this.markdownText.substring(0, start) + replacement + this.markdownText.substring(end);
+                    
+                    this.$nextTick(() => {
+                        textarea.focus();
+                        const newPos = start + before.length + selectedText.length;
+                        textarea.setSelectionRange(newPos, newPos);
+                        this.updatePreview();
+                        this.updateWordCount();
+                    });
+                },
+                
+                insertHeader(level) {
+                    const textarea = this.$refs.editor;
+                    const start = textarea.selectionStart;
+                    const end = textarea.selectionEnd;
+                    const selectedText = this.markdownText.substring(start, end) || 'Header Text';
+                    
+                    const headerPrefix = '#'.repeat(level) + ' ';
+                    const replacement = headerPrefix + selectedText;
+                    
+                    this.markdownText = this.markdownText.substring(0, start) + replacement + this.markdownText.substring(end);
+                    
+                    this.$nextTick(() => {
+                        textarea.focus();
+                        const newPos = start + replacement.length;
+                        textarea.setSelectionRange(newPos, newPos);
+                        this.updatePreview();
+                        this.updateWordCount();
+                    });
+                },
+                
+                insertList(type) {
+                    const textarea = this.$refs.editor;
+                    const start = textarea.selectionStart;
+                    const lineStart = this.markdownText.lastIndexOf('\n', start - 1) + 1;
+                    
+                    const prefix = type === 'ordered' ? '1. ' : '- ';
+                    const insertion = prefix + 'List item';
+                    
+                    this.markdownText = this.markdownText.substring(0, lineStart) + insertion + '\n' + this.markdownText.substring(lineStart);
+                    
+                    this.$nextTick(() => {
+                        textarea.focus();
+                        const newPos = lineStart + insertion.length;
+                        textarea.setSelectionRange(newPos, newPos);
+                        this.updatePreview();
+                        this.updateWordCount();
+                    });
+                },
+                
+                newDocument() {
+                    if (this.markdownText.trim() && !confirm('Are you sure you want to create a new document? Unsaved changes will be lost.')) {
+                        return;
+                    }
+                    this.markdownText = '';
+                    this.currentFileName = 'untitled.md';
+                    this.updatePreview();
+                    this.updateWordCount();
+                    this.showToastMessage('New document created', 'success');
+                },
+                
+                openFile(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        this.markdownText = e.target.result;
+                        this.currentFileName = file.name;
+                        this.updatePreview();
+                        this.updateWordCount();
+                        this.showToastMessage('File loaded successfully', 'success');
+                    };
+                    reader.onerror = () => {
+                        this.showToastMessage('Error reading file', 'error');
+                    };
+                    reader.readAsText(file);
+                    
+                    // Reset file input
+                    event.target.value = '';
+                },
+                
+                saveFile() {
+                    if (!this.markdownText.trim()) {
+                        this.showToastMessage('Nothing to save', 'error');
+                        return;
+                    }
+                    
+                    VibeUtils.downloadFile(this.markdownText, this.currentFileName, 'text/markdown');
+                    this.showToastMessage('File saved successfully', 'success');
+                },
+                
+                exportHTML() {
+                    if (!this.htmlPreview.trim()) {
+                        this.showToastMessage('Nothing to export', 'error');
+                        return;
+                    }
+                    
+                    const htmlDocument = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exported Document</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 2rem; color: #1f2937; }
+        h1 { font-size: 2rem; font-weight: bold; margin-top: 1.5rem; margin-bottom: 1rem; color: #111827; border-bottom: 1px solid #d1d5db; padding-bottom: 0.5rem; }
+        h2 { font-size: 1.5rem; font-weight: bold; margin-top: 1.5rem; margin-bottom: 0.75rem; color: #111827; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.25rem; }
+        h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.75rem; color: #111827; }
+        h4 { font-size: 1.125rem; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem; color: #111827; }
+        p { margin-bottom: 1rem; color: #1f2937; line-height: 1.625; }
+        blockquote { border-left: 4px solid #d1d5db; padding-left: 1rem; padding-top: 0.25rem; padding-bottom: 0.25rem; margin-bottom: 1rem; background-color: #f9fafb; color: #374151; }
+        ul, ol { margin-left: 1.5rem; margin-bottom: 1rem; color: #1f2937; }
+        li { margin-bottom: 0.25rem; line-height: 1.625; }
+        code { background-color: #f3f4f6; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.875rem; font-family: Monaco, Menlo, 'Ubuntu Mono', monospace; color: #dc2626; }
+        pre { background-color: #1f2937; color: #f9fafb; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; overflow-x: auto; }
+        pre code { background-color: transparent; padding: 0; color: #f9fafb; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+        th { background-color: #f3f4f6; border: 1px solid #d1d5db; padding: 0.75rem; text-align: left; font-weight: 600; }
+        td { border: 1px solid #d1d5db; padding: 0.75rem; }
+        a { color: #2563eb; text-decoration: underline; }
+        a:hover { color: #1d4ed8; }
+        img { max-width: 100%; height: auto; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-bottom: 1rem; }
+        hr { border-top: 2px solid #d1d5db; margin: 2rem 0; }
+    </style>
+</head>
+<body>
+${this.htmlPreview}
+</body>
+</html>`;
+                    
+                    const filename = this.currentFileName.replace(/\.md$/, '.html');
+                    VibeUtils.downloadFile(htmlDocument, filename, 'text/html');
+                    this.showToastMessage('HTML exported successfully', 'success');
+                },
+                
+                exportPDF() {
+                    if (!this.htmlPreview.trim()) {
+                        this.showToastMessage('Nothing to export', 'error');
+                        return;
+                    }
+                    
+                    // Create a new window with the formatted content for printing
+                    const printWindow = window.open('', '_blank');
+                    const htmlDocument = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Print Document</title>
+    <style>
+        @media print {
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; margin: 0; padding: 1rem; }
+            h1, h2, h3, h4, h5, h6 { page-break-after: avoid; }
+            pre, blockquote { page-break-inside: avoid; }
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 2rem; color: #1f2937; }
+        h1 { font-size: 2rem; font-weight: bold; margin-top: 1.5rem; margin-bottom: 1rem; color: #111827; border-bottom: 1px solid #d1d5db; padding-bottom: 0.5rem; }
+        h2 { font-size: 1.5rem; font-weight: bold; margin-top: 1.5rem; margin-bottom: 0.75rem; color: #111827; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.25rem; }
+        h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.75rem; color: #111827; }
+        h4 { font-size: 1.125rem; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem; color: #111827; }
+        p { margin-bottom: 1rem; color: #1f2937; line-height: 1.625; }
+        blockquote { border-left: 4px solid #d1d5db; padding-left: 1rem; padding-top: 0.25rem; padding-bottom: 0.25rem; margin-bottom: 1rem; background-color: #f9fafb; color: #374151; }
+        ul, ol { margin-left: 1.5rem; margin-bottom: 1rem; color: #1f2937; }
+        li { margin-bottom: 0.25rem; line-height: 1.625; }
+        code { background-color: #f3f4f6; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.875rem; font-family: Monaco, Menlo, 'Ubuntu Mono', monospace; color: #dc2626; }
+        pre { background-color: #1f2937; color: #f9fafb; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; overflow-x: auto; }
+        pre code { background-color: transparent; padding: 0; color: #f9fafb; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+        th { background-color: #f3f4f6; border: 1px solid #d1d5db; padding: 0.75rem; text-align: left; font-weight: 600; }
+        td { border: 1px solid #d1d5db; padding: 0.75rem; }
+        a { color: #2563eb; text-decoration: underline; }
+        img { max-width: 100%; height: auto; }
+        hr { border-top: 2px solid #d1d5db; margin: 2rem 0; }
+        
+        @media screen {
+            .print-instructions {
+                background: #f3f4f6;
+                border: 1px solid #d1d5db;
+                border-radius: 0.5rem;
+                padding: 1rem;
+                margin-bottom: 2rem;
+                text-align: center;
+            }
+        }
+        
+        @media print {
+            .print-instructions { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="print-instructions">
+        <p><strong>Print Instructions:</strong></p>
+        <p>Press <kbd>Ctrl+P</kbd> (or <kbd>Cmd+P</kbd> on Mac) to print this document.</p>
+        <p>In the print dialog, choose "Save as PDF" as your destination to create a PDF file.</p>
+        <button onclick="window.print()" style="background: #8B5CF6; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.25rem; cursor: pointer; margin-top: 0.5rem;">Print Now</button>
+    </div>
+    ${this.htmlPreview}
+</body>
+</html>`;
+                    
+                    printWindow.document.write(htmlDocument);
+                    printWindow.document.close();
+                    
+                    // Auto-trigger print dialog after content loads
+                    printWindow.addEventListener('load', () => {
+                        setTimeout(() => {
+                            printWindow.print();
+                        }, 500);
+                    });
+                    
+                    this.showToastMessage('Print dialog opened. Choose "Save as PDF" to create a PDF file.', 'success');
+                },
+                
+                copyHTML() {
+                    VibeUtils.copyToClipboard(this.htmlPreview);
+                    this.showToastMessage('HTML copied to clipboard', 'success');
+                },
+                
+                loadTemplate(template) {
+                    if (this.markdownText.trim() && !confirm('Loading a template will replace current content. Continue?')) {
+                        return;
+                    }
+                    // Convert escaped newlines to actual newlines
+                    this.markdownText = template.content.replace(/\\n/g, '\n');
+                    this.showTemplates = false;
+                    this.updatePreview();
+                    this.updateWordCount();
+                    this.showToastMessage(`${template.name} template loaded`, 'success');
+                },
+                
+                toggleFullscreen(mode) {
+                    this.fullscreenMode = mode;
+                    this.fullscreenTitle = mode === 'editor' ? 'Editor - Fullscreen' : 'Preview - Fullscreen';
+                },
+                
+                closeFullscreen() {
+                    this.fullscreenMode = null;
+                },
+                
+                syncScroll(source) {
+                    // Basic scroll synchronization
+                    if (source === 'editor') {
+                        const editor = this.$refs.editor;
+                        const preview = this.$refs.preview;
+                        if (editor && preview) {
+                            const ratio = editor.scrollTop / (editor.scrollHeight - editor.clientHeight);
+                            preview.scrollTop = ratio * (preview.scrollHeight - preview.clientHeight);
+                        }
+                    } else if (source === 'preview') {
+                        const editor = this.$refs.editor;
+                        const preview = this.$refs.preview;
+                        if (editor && preview) {
+                            const ratio = preview.scrollTop / (preview.scrollHeight - preview.clientHeight);
+                            editor.scrollTop = ratio * (editor.scrollHeight - editor.clientHeight);
+                        }
+                    }
+                },
+                
+                setupAutoSave() {
+                    // Auto-save every 30 seconds
+                    setInterval(() => {
+                        if (this.markdownText.trim()) {
+                            this.saveAutoSave();
+                        }
+                    }, 30000);
+                    
+                    // Save on content change (debounced)
+                    this.$watch('markdownText', () => {
+                        clearTimeout(this.autoSaveTimeout);
+                        this.autoSaveTimeout = setTimeout(() => {
+                            this.saveAutoSave();
+                        }, 5000);
+                    });
+                },
+                
+                saveAutoSave() {
+                    if (this.markdownText.trim()) {
+                        VibeUtils.setStorage('markdownPreview_autoSave', {
+                            content: this.markdownText,
+                            fileName: this.currentFileName,
+                            timestamp: Date.now()
+                        });
+                        this.autoSaveStatus = 'Auto-saved at ' + new Date().toLocaleTimeString();
+                        setTimeout(() => {
+                            this.autoSaveStatus = '';
+                        }, 3000);
+                    }
+                },
+                
+                loadAutoSave() {
+                    const autoSave = VibeUtils.getStorage('markdownPreview_autoSave', null);
+                    if (autoSave && autoSave.content) {
+                        // Only load if recent (within 24 hours)
+                        const isRecent = Date.now() - autoSave.timestamp < 24 * 60 * 60 * 1000;
+                        if (isRecent) {
+                            this.markdownText = autoSave.content;
+                            this.currentFileName = autoSave.fileName || 'untitled.md';
+                        }
+                    }
+                },
+                
+                showToastMessage(message, type = 'success') {
+                    this.toastMessage = message;
+                    this.toastType = type;
+                    this.showToast = true;
+                    setTimeout(() => {
+                        this.showToast = false;
+                    }, 3000);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
