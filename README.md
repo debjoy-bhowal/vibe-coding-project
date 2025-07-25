@@ -45,6 +45,7 @@ This project is a showcase of multiple mini-tools and utilities built within the
 | 📱 **QR Code Generator** | Generate QR codes for text, URLs, WiFi, vCard and more | ✅ Complete | QR Library Integration & File Downloads |
 | 🔐 **Password Generator** | Generate cryptographically secure passwords with strength analysis | ✅ Complete | Crypto API & Security Analytics |
 | 🌦️ **Weather Dashboard** | Local weather information and forecasts | ✅ Complete | API Integration & Data Visualization |
+| 📷 **Image Filter Studio** | Apply filters and effects to uploaded images | ✅ Complete | Canvas API & Image Processing |
 
 ### 🎯 Tool Features
 
@@ -78,6 +79,16 @@ This project is a showcase of multiple mini-tools and utilities built within the
 - Multi-day forecasts
 - Location-based weather
 - Interactive weather maps
+
+#### 📷 Image Filter Studio
+- Real-time filter preview
+- Multiple preset filters (Vintage, B&W, Sepia, etc.)
+- Manual adjustment controls (Brightness, Contrast, Saturation, Hue, Blur, Sepia)
+- Drag & drop image upload
+- Canvas-based image processing
+- Download edited images
+- Filter history system
+- Image information display
 
 ## 🚀 Quick Start
 

@@ -3,7 +3,7 @@ function hubApp() {
     return {
         searchTerm: '',
         filterStatus: 'all',
-        completedTools: 6,
+        completedTools: 7,
         
         // Sample tools data - will be updated as real tools are built
         tools: [
@@ -92,8 +92,8 @@ function hubApp() {
                 name: 'Image Filter Studio',
                 description: 'Apply filters and effects to uploaded images',
                 icon: '📷',
-                status: 'planned',
-                statusLabel: 'Planned',
+                status: 'complete',
+                statusLabel: 'Complete',
                 technologies: ['Canvas API', 'Image Processing', 'Filters'],
                 url: './tools/image-filter/'
             },
