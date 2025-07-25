@@ -72,8 +72,8 @@ function hubApp() {
                 name: 'QR Code Generator',
                 description: 'Generate QR codes for text, URLs, and more',
                 icon: '📱',
-                status: 'planned',
-                statusLabel: 'Planned',
+                status: 'complete',
+                statusLabel: 'Complete',
                 technologies: ['QR Library', 'Download', 'Customization'],
                 url: './tools/qr-generator/'
             },

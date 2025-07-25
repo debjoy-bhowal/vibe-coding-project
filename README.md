@@ -1,12 +1,18 @@
 # 🚀 Vibe Coding Competition - Mini Tools Collection
 
-[![Built with AI](https://img.shields.io/badge/Built%20with-AI%20Coding%20Tools-purple?style=for-the-badge)](https://github.com/yourusername/vibe-coding-project)
+[![Built with AI](https://img.shields.io/badge/Built%20with-AI%20Coding%20Tools-purple?style=for-the-badge)](https://github.com/debjoy-bhowal/vibe-coding-project)
 [![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/HTML)
 [![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/CSS)
 [![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![Alpine.js](https://img.shields.io/badge/Alpine.js-8BC34A?style=for-the-badge&logo=alpine.js&logoColor=white)](https://alpinejs.dev/)
 
+## 🌐 Live Demo
+
+**🚀 [View Live Website](https://debjoy-bhowal.github.io/vibe-coding-project/)** 
+
+> Try out all the tools instantly! No installation required - just click the link above to explore the complete collection of mini-tools in your browser.
+> 
 > A collection of mini web tools and projects built entirely using AI coding assistance for the Vibe Coding Competition. Each page showcases a different utility or interactive tool, demonstrating the power of AI-assisted development.
 
 ## 🎯 Project Overview
@@ -33,16 +39,44 @@ This project is a showcase of multiple mini-tools and utilities built within the
 
 | Tool | Description | Status | Tech Focus |
 |------|-------------|--------|------------|
-| 🧮 **Calculator Pro** | Advanced calculator with scientific functions | ✅ Complete | JavaScript Logic |
-| 🎨 **Color Palette Generator** | Generate beautiful color schemes | ✅ Complete | CSS Gradients & JS |
-| 📝 **Markdown Preview** | Real-time markdown editor and preview | 🚧 In Progress | Text Processing |
-| 🌦️ **Weather Dashboard** | Local weather information display | 📋 Planned | API Integration |
-| 📊 **Data Visualizer** | Create charts from CSV data | 📋 Planned | Chart.js Integration |
-| 🔐 **Password Generator** | Secure password generation tool | 📋 Planned | Security Algorithms |
-| 📱 **QR Code Generator** | Generate QR codes for text/URLs | 📋 Planned | QR Library Integration |
-| 🎵 **Music Player** | Simple audio player interface | 📋 Planned | Web Audio API |
-| 📷 **Image Filter Studio** | Apply filters to uploaded images | 📋 Planned | Canvas API |
-| 🎯 **Pomodoro Timer** | Productivity timer with notifications | 📋 Planned | Web Notifications |
+| 🧮 **Calculator Pro** | Advanced calculator with scientific functions | ✅ Complete | JavaScript Logic & Mathematical Operations |
+| 🎨 **Color Palette Generator** | Generate beautiful color schemes and palettes | ✅ Complete | CSS Gradients & Color Theory |
+| 📝 **Markdown Preview** | Real-time markdown editor with live preview | ✅ Complete | Text Processing & Markdown Parsing |
+| 📱 **QR Code Generator** | Generate QR codes for text, URLs, WiFi, vCard and more | ✅ Complete | QR Library Integration & File Downloads |
+| 🌦️ **Weather Dashboard** | Local weather information and forecasts | ✅ Complete | API Integration & Data Visualization |
+
+### 🎯 Tool Features
+
+#### 🧮 Calculator Pro
+- Scientific and basic calculations
+- Memory functions
+- Keyboard shortcuts
+- History tracking
+
+#### 🎨 Color Palette Generator  
+- Multiple color harmony algorithms
+- Export to various formats
+- Real-time preview
+- Accessibility compliance
+
+#### � Markdown Preview
+- Live split-pane editing
+- Syntax highlighting
+- Export to HTML
+- Mobile-responsive design
+
+#### 📱 QR Code Generator
+- Multiple QR code types (Text, URL, Email, SMS, WiFi, vCard, Phone)
+- Real-time preview
+- Color customization with presets
+- Download as PNG or SVG
+- Error correction levels
+
+#### 🌦️ Weather Dashboard
+- Current weather conditions
+- Multi-day forecasts
+- Location-based weather
+- Interactive weather maps
 
 ## 🚀 Quick Start
 
@@ -54,7 +88,7 @@ This project is a showcase of multiple mini-tools and utilities built within the
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/vibe-coding-project.git
+   git clone https://github.com/debjoy-bhowal/vibe-coding-project.git
    cd vibe-coding-project
    ```
 
@@ -136,15 +170,6 @@ This project showcases the power of AI-assisted development using:
 - ✅ **Innovation**: Creative use of AI in development
 - ✅ **Documentation**: Clear project structure and README
 
-## 📈 Development Timeline
-
-| Phase | Duration | Goals | Status |
-|-------|----------|-------|--------|
-| **Setup** | Day 1 | Project structure, main hub | ✅ |
-| **Core Tools** | Days 2-3 | 3-5 essential tools | 🚧 |
-| **Enhancement** | Days 4-5 | Polish, additional features | 📋 |
-| **Final Polish** | Day 6 | Testing, documentation | 📋 |
-
 ## 🎯 How to Add New Tools
 
 1. **Create tool directory**
@@ -191,12 +216,23 @@ This project is open source and available under the [MIT License](LICENSE).
 - **Open Source Community** for the amazing libraries and frameworks
 - **Tailwind CSS & Alpine.js** for the excellent developer experience
 
+## � Developers
+
+This project was developed collaboratively using AI assistance:
+
+- **Debjoy Bhowal**
+  - **Email**: debjoy.bhowal@netcentric.biz
+  - **GitHub**: [@debjoy-bhowal](https://github.com/debjoy-bhowal)
+
+- **GitHub Copilot**
+  - **Role**: AI Development Assistant
+  - **Contribution**: Code generation, optimization, and technical guidance
+
 ## 📧 Contact
 
-- **Developer**: [Your Name]
-- **Email**: your.email@example.com
-- **GitHub**: [@yourusername](https://github.com/yourusername)
-- **Competition**: Vibe Coding 2025
+For questions or collaboration opportunities, reach out to:
+- **Primary Contact**: Debjoy Bhowal (debjoy.bhowal@netcentric.biz)
+- **Project Repository**: [@debjoy-bhowal/vibe-coding-project](https://github.com/debjoy-bhowal/vibe-coding-project)
 
 ---
 
