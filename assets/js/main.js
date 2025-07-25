@@ -3,7 +3,7 @@ function hubApp() {
     return {
         searchTerm: '',
         filterStatus: 'all',
-        completedTools: 4,
+        completedTools: 5,
         
         // Sample tools data - will be updated as real tools are built
         tools: [
@@ -42,9 +42,9 @@ function hubApp() {
                 name: 'Weather Dashboard',
                 description: 'Local weather information with beautiful UI',
                 icon: '🌦️',
-                status: 'planned',
-                statusLabel: 'Planned',
-                technologies: ['Weather API', 'Geolocation', 'Charts'],
+                status: 'complete',
+                statusLabel: 'Complete',
+                technologies: ['Chart.js', 'Geolocation', 'Local Storage'],
                 url: './tools/weather-dashboard/'
             },
             {
