@@ -43,6 +43,7 @@ This project is a showcase of multiple mini-tools and utilities built within the
 | 🎨 **Color Palette Generator** | Generate beautiful color schemes and palettes | ✅ Complete | CSS Gradients & Color Theory |
 | 📝 **Markdown Preview** | Real-time markdown editor with live preview | ✅ Complete | Text Processing & Markdown Parsing |
 | 📱 **QR Code Generator** | Generate QR codes for text, URLs, WiFi, vCard and more | ✅ Complete | QR Library Integration & File Downloads |
+| 🔐 **Password Generator** | Generate cryptographically secure passwords with strength analysis | ✅ Complete | Crypto API & Security Analytics |
 | 🌦️ **Weather Dashboard** | Local weather information and forecasts | ✅ Complete | API Integration & Data Visualization |
 
 ### 🎯 Tool Features

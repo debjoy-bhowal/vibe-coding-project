@@ -3,7 +3,7 @@ function hubApp() {
     return {
         searchTerm: '',
         filterStatus: 'all',
-        completedTools: 5,
+        completedTools: 6,
         
         // Sample tools data - will be updated as real tools are built
         tools: [
@@ -60,11 +60,11 @@ function hubApp() {
             {
                 id: 'password-generator',
                 name: 'Password Generator',
-                description: 'Generate secure passwords with custom rules',
+                description: 'Generate cryptographically secure passwords with strength analysis',
                 icon: '🔐',
-                status: 'planned',
-                statusLabel: 'Planned',
-                technologies: ['Crypto API', 'Security', 'Validation'],
+                status: 'complete',
+                statusLabel: 'Complete',
+                technologies: ['Crypto API', 'Security', 'Analytics'],
                 url: './tools/password-generator/'
             },
             {
@@ -195,10 +195,6 @@ document.addEventListener('DOMContentLoaded', function() {
             element.style.transform = `translateY(${scrolled * speed}px)`;
         });
     });
-
-    // Update page title based on completed tools
-    const completedCount = document.querySelectorAll('[x-data]')[0].__x.$data.completedTools;
-    document.title = `Vibe Coding - ${completedCount} Tools Built`;
 });
 
 // Service Worker registration for PWA capabilities (optional)

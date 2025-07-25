@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Generator - Vibe Tools</title>
+    
+    <!-- Tailwind CSS & DaisyUI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.7.2/dist/full.min.css" rel="stylesheet" />
+    
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .card-gradient {
+            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.9) 100%);
+            backdrop-filter: blur(10px);
+        }
+        
+        .password-display {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 1.25rem;
+            font-weight: 600;
+            word-break: break-all;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .password-display:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        }
+        
+        .strength-meter {
+            height: 8px;
+            border-radius: 4px;
+            background: #e2e8f0;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+        
+        .strength-bar {
+            height: 100%;
+            transition: all 0.3s ease;
+            border-radius: 4px;
+        }
+        
+        .strength-very-weak { background: #ef4444; width: 20%; }
+        .strength-weak { background: #f97316; width: 40%; }
+        .strength-medium { background: #eab308; width: 60%; }
+        .strength-strong { background: #22c55e; width: 80%; }
+        .strength-very-strong { background: #10b981; width: 100%; }
+        
+        .character-set {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .character-set.active {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea10 0%, #764ba210 100%);
+        }
+        
+        .copy-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .copy-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        .generate-btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .generate-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+        
+        .preset-btn {
+            transition: all 0.3s ease;
+        }
+        
+        .preset-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .preset-btn.active {
+            background: #667eea;
+            color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        .toast-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            padding: 12px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .toast-notification.show {
+            transform: translateX(0);
+        }
+        
+        .toast-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+        
+        .toast-error {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+        
+        .feature-card {
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        
+        .password-history {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .history-item {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+            transition: all 0.3s ease;
+        }
+        
+        .history-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+        }
+        
+        .entropy-display {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 1px solid #bae6fd;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen gradient-bg" x-data="passwordGenerator()">
+    
+    <!-- Header -->
+    <header class="bg-white/80 backdrop-blur-md shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <a href="../../index.html" class="btn btn-ghost btn-sm">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        Back to Hub
+                    </a>
+                    <div class="flex items-center space-x-2">
+                        <div class="text-3xl">🔐</div>
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-800">Password Generator</h1>
+                            <p class="text-sm text-gray-600">Generate secure passwords with customizable options</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            
+            <!-- Left Panel - Configuration -->
+            <div class="xl:col-span-2 space-y-6">
+                
+                <!-- Password Display -->
+                <div class="card-gradient rounded-xl p-6 shadow-xl">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xl font-bold text-gray-800">
+                            <i class="fas fa-key mr-2 text-purple-600"></i>
+                            Generated Password
+                        </h3>
+                        <div class="flex items-center space-x-2">
+                            <div class="badge badge-sm" :class="password ? 'badge-success' : 'badge-warning'">
+                                <i :class="password ? 'fas fa-check' : 'fas fa-clock'" class="mr-1"></i>
+                                <span x-text="password ? 'Ready' : 'Generate'"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="password-display" x-show="password" x-transition>
+                        <span x-text="password" class="flex-1"></span>
+                        <button 
+                            class="copy-btn text-white p-2 rounded-lg ml-3 flex items-center space-x-1"
+                            @click="copyPassword()"
+                            title="Copy password"
+                        >
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    
+                    <div x-show="!password" class="password-display text-gray-500 italic justify-center">
+                        Click "Generate Password" to create a secure password
+                    </div>
+                    
+                    <!-- Strength Meter -->
+                    <div x-show="password" class="mt-4" x-transition>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-medium text-gray-700">Password Strength</span>
+                            <span class="text-sm font-medium" 
+                                  :class="{
+                                      'text-red-600': strengthLevel === 'Very Weak' || strengthLevel === 'Weak',
+                                      'text-yellow-600': strengthLevel === 'Medium',
+                                      'text-green-600': strengthLevel === 'Strong' || strengthLevel === 'Very Strong'
+                                  }"
+                                  x-text="strengthLevel">
+                            </span>
+                        </div>
+                        <div class="strength-meter">
+                            <div class="strength-bar" :class="strengthClass"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Password Configuration -->
+                <div class="card-gradient rounded-xl p-6 shadow-xl">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">
+                        <i class="fas fa-cog mr-2 text-purple-600"></i>
+                        Configuration
+                    </h3>
+                    
+                    <!-- Password Length -->
+                    <div class="mb-6">
+                        <label for="passwordLength" class="block text-sm font-medium text-gray-700 mb-2">
+                            Password Length: <span x-text="length" class="font-bold text-purple-600"></span>
+                        </label>
+                        <input 
+                            id="passwordLength"
+                            type="range" 
+                            min="4" 
+                            max="128" 
+                            class="range range-primary w-full"
+                            x-model="length"
+                            @input="generatePassword()"
+                        >
+                        <div class="w-full flex justify-between text-xs text-gray-500 mt-1">
+                            <span>4</span>
+                            <span>32</span>
+                            <span>64</span>
+                            <span>128</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Character Sets -->
+                    <div class="mb-6">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-3">Character Types</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <label class="character-set cursor-pointer" :class="{ 'active': includeUppercase }">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-3">
+                                        <input 
+                                            type="checkbox" 
+                                            class="checkbox checkbox-primary"
+                                            x-model="includeUppercase"
+                                            @change="generatePassword()"
+                                        >
+                                        <div>
+                                            <div class="font-medium">Uppercase Letters</div>
+                                            <div class="text-xs text-gray-500">A-Z</div>
+                                        </div>
+                                    </div>
+                                    <div class="text-lg">🔤</div>
+                                </div>
+                            </label>
+                            
+                            <label class="character-set cursor-pointer" :class="{ 'active': includeLowercase }">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-3">
+                                        <input 
+                                            type="checkbox" 
+                                            class="checkbox checkbox-primary"
+                                            x-model="includeLowercase"
+                                            @change="generatePassword()"
+                                        >
+                                        <div>
+                                            <div class="font-medium">Lowercase Letters</div>
+                                            <div class="text-xs text-gray-500">a-z</div>
+                                        </div>
+                                    </div>
+                                    <div class="text-lg">🔡</div>
+                                </div>
+                            </label>
+                            
+                            <label class="character-set cursor-pointer" :class="{ 'active': includeNumbers }">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-3">
+                                        <input 
+                                            type="checkbox" 
+                                            class="checkbox checkbox-primary"
+                                            x-model="includeNumbers"
+                                            @change="generatePassword()"
+                                        >
+                                        <div>
+                                            <div class="font-medium">Numbers</div>
+                                            <div class="text-xs text-gray-500">0-9</div>
+                                        </div>
+                                    </div>
+                                    <div class="text-lg">🔢</div>
+                                </div>
+                            </label>
+                            
+                            <label class="character-set cursor-pointer" :class="{ 'active': includeSymbols }">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-3">
+                                        <input 
+                                            type="checkbox" 
+                                            class="checkbox checkbox-primary"
+                                            x-model="includeSymbols"
+                                            @change="generatePassword()"
+                                        >
+                                        <div>
+                                            <div class="font-medium">Symbols</div>
+                                            <div class="text-xs text-gray-500">!@#$%^&*</div>
+                                        </div>
+                                    </div>
+                                    <div class="text-lg">🔣</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Advanced Options -->
+                    <div class="mb-6">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-3">Advanced Options</h4>
+                        <div class="space-y-3">
+                            <label class="flex items-center space-x-3">
+                                <input 
+                                    type="checkbox" 
+                                    class="checkbox checkbox-primary"
+                                    x-model="excludeSimilar"
+                                    @change="generatePassword()"
+                                >
+                                <div>
+                                    <div class="font-medium">Exclude Similar Characters</div>
+                                    <div class="text-xs text-gray-500">Avoid confusing characters like 0, O, l, 1</div>
+                                </div>
+                            </label>
+                            
+                            <label class="flex items-center space-x-3">
+                                <input 
+                                    type="checkbox" 
+                                    class="checkbox checkbox-primary"
+                                    x-model="excludeAmbiguous"
+                                    @change="generatePassword()"
+                                >
+                                <div>
+                                    <div class="font-medium">Exclude Ambiguous Characters</div>
+                                    <div class="text-xs text-gray-500">Avoid characters like { } [ ] ( ) / \ ' " ~ , ; < ></div>
+                                </div>
+                            </label>
+                            
+                            <label class="flex items-center space-x-3">
+                                <input 
+                                    type="checkbox" 
+                                    class="checkbox checkbox-primary"
+                                    x-model="requireFromEach"
+                                    @change="generatePassword()"
+                                >
+                                <div>
+                                    <div class="font-medium">Require from Each Selected Set</div>
+                                    <div class="text-xs text-gray-500">Ensure at least one character from each selected type</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Presets -->
+                    <div class="mb-6">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-3">Quick Presets</h4>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <template x-for="preset in presets" :key="preset.name">
+                                <button 
+                                    class="preset-btn p-3 bg-white rounded-lg border-2 border-purple-200 text-center"
+                                    @click="applyPreset(preset)"
+                                >
+                                    <div class="text-2xl mb-1" x-text="preset.icon"></div>
+                                    <div class="text-xs font-medium" x-text="preset.name"></div>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+                    
+                    <!-- Generate Button -->
+                    <button 
+                        class="generate-btn w-full text-white py-3 px-6 rounded-lg font-medium text-lg flex items-center justify-center space-x-2"
+                        @click="generatePassword()"
+                    >
+                        <i class="fas fa-sync-alt"></i>
+                        <span>Generate New Password</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Right Panel - Info and History -->
+            <div class="space-y-6">
+                
+                <!-- Password Analytics -->
+                <div class="card-gradient rounded-xl p-6 shadow-xl" x-show="password">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">
+                        <i class="fas fa-chart-bar mr-2 text-purple-600"></i>
+                        Password Analytics
+                    </h3>
+                    
+                    <div class="space-y-4">
+                        <div class="entropy-display">
+                            <div class="text-sm font-medium text-gray-700 mb-1">Entropy</div>
+                            <div class="text-2xl font-bold text-blue-600" x-text="entropy.toFixed(1)"></div>
+                            <div class="text-xs text-gray-500">bits of entropy</div>
+                        </div>
+                        
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center py-2 border-b border-purple-100">
+                                <span class="text-gray-600 font-medium">Length:</span>
+                                <span class="text-gray-800" x-text="password.length"></span>
+                            </div>
+                            <div class="flex justify-between items-center py-2 border-b border-purple-100">
+                                <span class="text-gray-600 font-medium">Character Sets:</span>
+                                <span class="text-gray-800" x-text="getActiveCharacterSets()"></span>
+                            </div>
+                            <div class="flex justify-between items-center py-2 border-b border-purple-100">
+                                <span class="text-gray-600 font-medium">Time to Crack:</span>
+                                <span class="text-gray-800 text-xs" x-text="timeToCrack"></span>
+                            </div>
+                            <div class="flex justify-between items-center py-2">
+                                <span class="text-gray-600 font-medium">Possible Combinations:</span>
+                                <span class="text-gray-800 text-xs" x-text="possibleCombinations"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Password History -->
+                <div class="card-gradient rounded-xl p-6 shadow-xl">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xl font-bold text-gray-800">
+                            <i class="fas fa-history mr-2 text-purple-600"></i>
+                            Recent Passwords
+                        </h3>
+                        <button 
+                            class="btn btn-sm btn-outline btn-error"
+                            @click="clearHistory()"
+                            x-show="passwordHistory.length > 0"
+                        >
+                            <i class="fas fa-trash mr-1"></i>
+                            Clear
+                        </button>
+                    </div>
+                    
+                    <div class="password-history" x-show="passwordHistory.length > 0">
+                        <template x-for="(historyPassword, index) in passwordHistory.slice().reverse()" :key="index">
+                            <div class="history-item">
+                                <div class="flex items-center justify-between">
+                                    <span class="flex-1 text-sm" x-text="historyPassword"></span>
+                                    <button 
+                                        class="btn btn-xs btn-ghost text-purple-600"
+                                        @click="copyToClipboard(historyPassword)"
+                                        title="Copy to clipboard"
+                                    >
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                    
+                    <div x-show="passwordHistory.length === 0" class="text-center text-gray-500 py-8">
+                        <i class="fas fa-clock text-4xl mb-4 opacity-30"></i>
+                        <p>No passwords generated yet</p>
+                    </div>
+                </div>
+                
+                <!-- Security Tips -->
+                <div class="card-gradient rounded-xl p-6 shadow-xl">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">
+                        <i class="fas fa-shield-alt mr-2 text-purple-600"></i>
+                        Security Tips
+                    </h3>
+                    
+                    <div class="space-y-3 text-sm text-gray-700">
+                        <div class="flex items-start space-x-2">
+                            <i class="fas fa-check-circle text-green-500 mt-0.5"></i>
+                            <span>Use at least 12 characters for strong passwords</span>
+                        </div>
+                        <div class="flex items-start space-x-2">
+                            <i class="fas fa-check-circle text-green-500 mt-0.5"></i>
+                            <span>Include multiple character types (upper, lower, numbers, symbols)</span>
+                        </div>
+                        <div class="flex items-start space-x-2">
+                            <i class="fas fa-check-circle text-green-500 mt-0.5"></i>
+                            <span>Use unique passwords for each account</span>
+                        </div>
+                        <div class="flex items-start space-x-2">
+                            <i class="fas fa-check-circle text-green-500 mt-0.5"></i>
+                            <span>Store passwords in a secure password manager</span>
+                        </div>
+                        <div class="flex items-start space-x-2">
+                            <i class="fas fa-exclamation-triangle text-yellow-500 mt-0.5"></i>
+                            <span>Never share passwords or store them in plain text</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Features Section -->
+        <div class="mt-12">
+            <h2 class="text-3xl font-bold text-center text-white mb-8">✨ Features</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="feature-card bg-white/90 backdrop-blur-sm rounded-xl p-6 text-center shadow-xl">
+                    <div class="text-4xl mb-4">🔒</div>
+                    <h3 class="text-lg font-bold text-gray-800 mb-2">Cryptographically Secure</h3>
+                    <p class="text-gray-600 text-sm">Uses browser's crypto API for true random generation</p>
+                </div>
+                
+                <div class="feature-card bg-white/90 backdrop-blur-sm rounded-xl p-6 text-center shadow-xl">
+                    <div class="text-4xl mb-4">⚙️</div>
+                    <h3 class="text-lg font-bold text-gray-800 mb-2">Highly Customizable</h3>
+                    <p class="text-gray-600 text-sm">Control length, character sets, and advanced options</p>
+                </div>
+                
+                <div class="feature-card bg-white/90 backdrop-blur-sm rounded-xl p-6 text-center shadow-xl">
+                    <div class="text-4xl mb-4">📊</div>
+                    <h3 class="text-lg font-bold text-gray-800 mb-2">Strength Analysis</h3>
+                    <p class="text-gray-600 text-sm">Real-time entropy calculation and crack time estimates</p>
+                </div>
+                
+                <div class="feature-card bg-white/90 backdrop-blur-sm rounded-xl p-6 text-center shadow-xl">
+                    <div class="text-4xl mb-4">🚫</div>
+                    <h3 class="text-lg font-bold text-gray-800 mb-2">No Server Required</h3>
+                    <p class="text-gray-600 text-sm">All generation happens locally in your browser</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div 
+        id="toast" 
+        class="toast-notification"
+        :class="toastType"
+        x-show="showToast"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 transform translate-x-full"
+        x-transition:enter-end="opacity-100 transform translate-x-0"
+        x-transition:leave="transition ease-in duration-300"
+        x-transition:leave-start="opacity-100 transform translate-x-0"
+        x-transition:leave-end="opacity-0 transform translate-x-full"
+    >
+        <div class="flex items-center space-x-2">
+            <i :class="toastType === 'toast-success' ? 'fas fa-check' : 'fas fa-exclamation-triangle'"></i>
+            <span x-text="toastMessage"></span>
+        </div>
+    </div>
+
+    <script src="../../assets/js/utils.js"></script>
+    <script>
+        function passwordGenerator() {
+            return {
+                // Password configuration
+                length: 16,
+                includeUppercase: true,
+                includeLowercase: true,
+                includeNumbers: true,
+                includeSymbols: true,
+                excludeSimilar: false,
+                excludeAmbiguous: false,
+                requireFromEach: true,
+                
+                // Generated password data
+                password: '',
+                passwordHistory: [],
+                
+                // UI state
+                showToast: false,
+                toastMessage: '',
+                toastType: 'toast-success',
+                
+                // Character sets
+                characters: {
+                    uppercase: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+                    lowercase: 'abcdefghijklmnopqrstuvwxyz',
+                    numbers: '0123456789',
+                    symbols: '!@#$%^&*()_+-=[]{}|;:,.<>?',
+                    similarChars: '0O1lI|`',
+                    ambiguousChars: '{}[]()/\\\'\"~,;.<>'
+                },
+                
+                // Presets
+                presets: [
+                    {
+                        name: 'Basic',
+                        icon: '🔤',
+                        length: 12,
+                        uppercase: true,
+                        lowercase: true,
+                        numbers: true,
+                        symbols: false
+                    },
+                    {
+                        name: 'Strong',
+                        icon: '🔒',
+                        length: 16,
+                        uppercase: true,
+                        lowercase: true,
+                        numbers: true,
+                        symbols: true
+                    },
+                    {
+                        name: 'Max Security',
+                        icon: '🛡️',
+                        length: 32,
+                        uppercase: true,
+                        lowercase: true,
+                        numbers: true,
+                        symbols: true
+                    },
+                    {
+                        name: 'PIN',
+                        icon: '🔢',
+                        length: 6,
+                        uppercase: false,
+                        lowercase: false,
+                        numbers: true,
+                        symbols: false
+                    }
+                ],
+                
+                init() {
+                    // Load password history from localStorage
+                    const saved = localStorage.getItem('passwordHistory');
+                    if (saved) {
+                        this.passwordHistory = JSON.parse(saved);
+                    }
+                    
+                    // Generate initial password
+                    this.generatePassword();
+                },
+                
+                generatePassword() {
+                    try {
+                        const charset = this.buildCharacterSet();
+                        
+                        if (charset.length === 0) {
+                            this.showToastMessage('Please select at least one character type', 'toast-error');
+                            return;
+                        }
+                        
+                        let newPassword;
+                        
+                        if (this.requireFromEach) {
+                            newPassword = this.generatePasswordWithRequirements(charset);
+                        } else {
+                            newPassword = this.generateRandomPassword(charset);
+                        }
+                        
+                        this.password = newPassword;
+                        this.addToHistory(newPassword);
+                        
+                    } catch (error) {
+                        console.error('Password generation error:', error);
+                        this.showToastMessage('Error generating password', 'toast-error');
+                    }
+                },
+                
+                buildCharacterSet() {
+                    let charset = '';
+                    
+                    if (this.includeUppercase) {
+                        charset += this.characters.uppercase;
+                    }
+                    if (this.includeLowercase) {
+                        charset += this.characters.lowercase;
+                    }
+                    if (this.includeNumbers) {
+                        charset += this.characters.numbers;
+                    }
+                    if (this.includeSymbols) {
+                        charset += this.characters.symbols;
+                    }
+                    
+                    // Remove similar characters if requested
+                    if (this.excludeSimilar) {
+                        for (const char of this.characters.similarChars) {
+                            charset = charset.replace(new RegExp(char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '');
+                        }
+                    }
+                    
+                    // Remove ambiguous characters if requested
+                    if (this.excludeAmbiguous) {
+                        for (const char of this.characters.ambiguousChars) {
+                            charset = charset.replace(new RegExp(char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '');
+                        }
+                    }
+                    
+                    return charset;
+                },
+                
+                generateRandomPassword(charset) {
+                    const array = new Uint32Array(this.length);
+                    crypto.getRandomValues(array);
+                    
+                    let password = '';
+                    for (let i = 0; i < this.length; i++) {
+                        password += charset[array[i] % charset.length];
+                    }
+                    
+                    return password;
+                },
+                
+                generatePasswordWithRequirements(charset) {
+                    const requiredChars = [];
+                    const charSets = [];
+                    
+                    // Build array of required character sets
+                    if (this.includeUppercase) {
+                        let upperChars = this.characters.uppercase;
+                        if (this.excludeSimilar) {
+                            for (const char of this.characters.similarChars) {
+                                upperChars = upperChars.replace(new RegExp(char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '');
+                            }
+                        }
+                        charSets.push(upperChars);
+                    }
+                    
+                    if (this.includeLowercase) {
+                        let lowerChars = this.characters.lowercase;
+                        if (this.excludeSimilar) {
+                            for (const char of this.characters.similarChars) {
+                                lowerChars = lowerChars.replace(new RegExp(char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '');
+                            }
+                        }
+                        charSets.push(lowerChars);
+                    }
+                    
+                    if (this.includeNumbers) {
+                        let numberChars = this.characters.numbers;
+                        if (this.excludeSimilar) {
+                            for (const char of this.characters.similarChars) {
+                                numberChars = numberChars.replace(new RegExp(char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '');
+                            }
+                        }
+                        charSets.push(numberChars);
+                    }
+                    
+                    if (this.includeSymbols) {
+                        let symbolChars = this.characters.symbols;
+                        if (this.excludeAmbiguous) {
+                            for (const char of this.characters.ambiguousChars) {
+                                symbolChars = symbolChars.replace(new RegExp(char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '');
+                            }
+                        }
+                        charSets.push(symbolChars);
+                    }
+                    
+                    // Get one character from each required set
+                    for (const set of charSets) {
+                        if (set.length > 0) {
+                            const randomValues = new Uint32Array(1);
+                            crypto.getRandomValues(randomValues);
+                            requiredChars.push(set[randomValues[0] % set.length]);
+                        }
+                    }
+                    
+                    // Fill remaining length with random characters from full charset
+                    const remainingLength = this.length - requiredChars.length;
+                    const randomArray = new Uint32Array(remainingLength);
+                    crypto.getRandomValues(randomArray);
+                    
+                    for (let i = 0; i < remainingLength; i++) {
+                        requiredChars.push(charset[randomArray[i] % charset.length]);
+                    }
+                    
+                    // Shuffle the password
+                    return this.shuffleArray(requiredChars).join('');
+                },
+                
+                shuffleArray(array) {
+                    const shuffled = [...array];
+                    const randomValues = new Uint32Array(shuffled.length);
+                    crypto.getRandomValues(randomValues);
+                    
+                    for (let i = shuffled.length - 1; i > 0; i--) {
+                        const j = randomValues[i] % (i + 1);
+                        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                    }
+                    
+                    return shuffled;
+                },
+                
+                addToHistory(password) {
+                    // Don't add duplicates
+                    if (!this.passwordHistory.includes(password)) {
+                        this.passwordHistory.push(password);
+                        
+                        // Keep only last 10 passwords
+                        if (this.passwordHistory.length > 10) {
+                            this.passwordHistory = this.passwordHistory.slice(-10);
+                        }
+                        
+                        // Save to localStorage
+                        localStorage.setItem('passwordHistory', JSON.stringify(this.passwordHistory));
+                    }
+                },
+                
+                clearHistory() {
+                    this.passwordHistory = [];
+                    localStorage.removeItem('passwordHistory');
+                    this.showToastMessage('Password history cleared', 'toast-success');
+                },
+                
+                applyPreset(preset) {
+                    this.length = preset.length;
+                    this.includeUppercase = preset.uppercase;
+                    this.includeLowercase = preset.lowercase;
+                    this.includeNumbers = preset.numbers;
+                    this.includeSymbols = preset.symbols;
+                    this.generatePassword();
+                    this.showToastMessage(`Applied ${preset.name} preset`, 'toast-success');
+                },
+                
+                copyPassword() {
+                    this.copyToClipboard(this.password);
+                },
+                
+                async copyToClipboard(text) {
+                    try {
+                        await navigator.clipboard.writeText(text);
+                        this.showToastMessage('Password copied to clipboard!', 'toast-success');
+                    } catch (err) {
+                        // Fallback for older browsers
+                        const textArea = document.createElement('textarea');
+                        textArea.value = text;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                        this.showToastMessage('Password copied to clipboard!', 'toast-success');
+                    }
+                },
+                
+                // Computed properties for password strength
+                get entropy() {
+                    if (!this.password) return 0;
+                    const charset = this.buildCharacterSet();
+                    return this.password.length * Math.log2(charset.length);
+                },
+                
+                get strengthLevel() {
+                    const entropy = this.entropy;
+                    if (entropy < 30) return 'Very Weak';
+                    if (entropy < 50) return 'Weak';
+                    if (entropy < 70) return 'Medium';
+                    if (entropy < 90) return 'Strong';
+                    return 'Very Strong';
+                },
+                
+                get strengthClass() {
+                    const level = this.strengthLevel.toLowerCase().replace(' ', '-');
+                    return `strength-${level}`;
+                },
+                
+                get timeToCrack() {
+                    const combinations = Math.pow(this.buildCharacterSet().length, this.password.length);
+                    const attemptsPerSecond = 1e12; // 1 trillion attempts per second (very optimistic for attacker)
+                    const secondsToCrack = combinations / (2 * attemptsPerSecond); // Average case
+                    
+                    if (secondsToCrack < 60) return `${Math.round(secondsToCrack)} seconds`;
+                    if (secondsToCrack < 3600) return `${Math.round(secondsToCrack / 60)} minutes`;
+                    if (secondsToCrack < 86400) return `${Math.round(secondsToCrack / 3600)} hours`;
+                    if (secondsToCrack < 31536000) return `${Math.round(secondsToCrack / 86400)} days`;
+                    if (secondsToCrack < 31536000000) return `${Math.round(secondsToCrack / 31536000)} years`;
+                    return 'Centuries';
+                },
+                
+                get possibleCombinations() {
+                    const combinations = Math.pow(this.buildCharacterSet().length, this.password.length);
+                    if (combinations > 1e15) return combinations.toExponential(2);
+                    return combinations.toLocaleString();
+                },
+                
+                getActiveCharacterSets() {
+                    const sets = [];
+                    if (this.includeUppercase) sets.push('Upper');
+                    if (this.includeLowercase) sets.push('Lower');
+                    if (this.includeNumbers) sets.push('Numbers');
+                    if (this.includeSymbols) sets.push('Symbols');
+                    return sets.length;
+                },
+                
+                showToastMessage(message, type = 'toast-success') {
+                    this.toastMessage = message;
+                    this.toastType = type;
+                    this.showToast = true;
+                    
+                    setTimeout(() => {
+                        this.showToast = false;
+                    }, 3000);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
