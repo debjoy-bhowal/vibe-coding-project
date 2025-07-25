@@ -3,7 +3,7 @@ function hubApp() {
     return {
         searchTerm: '',
         filterStatus: 'all',
-        completedTools: 8,
+        completedTools: 9,
         
         // Sample tools data - will be updated as real tools are built
         tools: [
@@ -102,8 +102,8 @@ function hubApp() {
                 name: 'Pomodoro Timer',
                 description: 'Productivity timer with notifications',
                 icon: '🎯',
-                status: 'planned',
-                statusLabel: 'Planned',
+                status: 'complete',
+                statusLabel: 'Complete',
                 technologies: ['Notifications', 'Audio', 'Sessions'],
                 url: './tools/pomodoro-timer/'
             }

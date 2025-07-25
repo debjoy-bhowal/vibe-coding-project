@@ -172,13 +172,15 @@
                 <div class="flex items-center space-x-4">
                     <a href="../../index.html" class="btn btn-ghost btn-sm">
                         <i class="fas fa-arrow-left mr-2"></i>
-                        Back to Hub
+                        <span class="hidden md:inline">Back to Hub</span>
                     </a>
                     <div class="flex items-center space-x-2">
-                        <div class="text-3xl">📱</div>
+                        <div class="text-2xl md:text-3xl">📱</div>
                         <div>
-                            <h1 class="text-2xl font-bold text-gray-800">QR Code Generator</h1>
-                            <p class="text-sm text-gray-600">Generate QR codes for text, URLs, WiFi, and more</p>
+                            <h1 class="text-lg md:text-2xl font-bold text-gray-800">
+                                QR Code Generator
+                            </h1>
+                            <p class="text-xs md:text-sm text-gray-600 hidden sm:block">Generate QR codes for text, URLs, WiFi, and more</p>
                         </div>
                     </div>
                 </div>
@@ -1049,6 +1051,18 @@
                     setTimeout(() => {
                         this.showToast = false;
                     }, 3000);
+                }
+            }
+        }
+    </script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    screens: {
+                        'xs': '375px',
+                    }
                 }
             }
         }

@@ -234,31 +234,47 @@
             box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
         }
     </style>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    screens: {
+                        'xs': '375px',
+                    }
+                }
+            }
+        }
+    </script>
 </head>
 
 <body class="min-h-screen gradient-bg" x-data="musicPlayer()">
     
     <!-- Header -->
     <header class="bg-white/80 backdrop-blur-md shadow-lg sticky top-0 z-50">
-        <div class="container mx-auto px-4 py-4">
+        <div class="container mx-auto px-4 py-3">
             <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-4">
-                    <a href="../../index.html" class="btn btn-ghost btn-sm">
-                        <i class="fas fa-arrow-left mr-2"></i>
-                        Back to Hub
+                <div class="flex items-center gap-2 md:gap-4">
+                    <a href="../../index.html" class="btn btn-ghost btn-sm gap-1 md:gap-2">
+                        <i class="fas fa-arrow-left"></i>
+                        <span class="hidden md:inline">Back to Hub</span>
                     </a>
-                    <div class="flex items-center space-x-2">
-                        <div class="text-3xl">🎵</div>
+                    <div class="divider divider-horizontal hidden md:flex"></div>
+                    <div class="flex items-center gap-1 md:gap-2">
+                        <div class="text-xl md:text-3xl">🎵</div>
                         <div>
-                            <h1 class="text-2xl font-bold text-gray-800">Music Player</h1>
-                            <p class="text-sm text-gray-600">Simple audio player with playlist support</p>
+                            <h1 class="text-lg md:text-2xl font-bold text-gray-800">
+                                Music Player
+                            </h1>
+                            <p class="text-xs md:text-sm text-gray-600 hidden sm:block">Simple audio player with playlist support</p>
                         </div>
                     </div>
                 </div>
-                <div class="flex items-center space-x-2">
-                    <div class="badge badge-sm" :class="playlist.length > 0 ? 'badge-success' : 'badge-warning'">
-                        <i class="fas fa-music mr-1"></i>
-                        <span x-text="playlist.length + ' tracks'"></span>
+                <div class="flex items-center">
+                    <div class="badge badge-xs md:badge-sm" :class="playlist.length > 0 ? 'badge-success' : 'badge-warning'">
+                        <i class="fas fa-music mr-1 text-xs"></i>
+                        <span x-text="playlist.length" class="xs:hidden"></span>
+                        <span x-text="playlist.length + ' tracks'" class="hidden xs:inline"></span>
                     </div>
                 </div>
             </div>

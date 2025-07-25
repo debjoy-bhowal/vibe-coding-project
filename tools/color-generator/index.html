@@ -40,11 +40,19 @@
             box-shadow: 0 15px 35px rgba(0,0,0,0.2);
         }
         .color-input {
-            width: 60px;
+            width: 80px;
             height: 40px;
             border: none;
             border-radius: 8px;
             cursor: pointer;
+            padding: 2px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        @media (max-width: 640px) {
+            .color-input {
+                width: 120px;
+                max-width: 120px;
+            }
         }
         @media (max-width: 768px) {
             .color-preview {
@@ -63,6 +71,9 @@
                     colors: {
                         primary: '#8B5CF6',
                         secondary: '#06B6D4',
+                    },
+                    screens: {
+                        'xs': '375px',
                     }
                 }
             }
@@ -73,16 +84,16 @@
     
     <!-- Header -->
     <header class="bg-white/80 backdrop-blur-md shadow-lg sticky top-0 z-50">
-        <div class="container mx-auto px-4 py-4">
+        <div class="container mx-auto px-4 py-3">
             <div class="flex items-center justify-between">
-                <div class="flex items-center gap-4">
-                    <a href="../../index.html" class="btn btn-ghost gap-2 hover:text-primary">
+                <div class="flex items-center gap-2 md:gap-4">
+                    <a href="../../index.html" class="btn btn-ghost btn-sm gap-1 md:gap-2 hover:text-primary">
                         <i class="fas fa-arrow-left"></i>
-                        Back to Hub
+                        <span class="hidden md:inline">Back to Hub</span>
                     </a>
-                    <div class="divider divider-horizontal"></div>
-                    <h1 class="text-2xl font-bold text-gray-800">
-                        <i class="fas fa-palette text-primary"></i>
+                    <div class="divider divider-horizontal hidden md:flex"></div>
+                    <h1 class="text-lg md:text-2xl font-bold text-gray-800 flex items-center gap-1 md:gap-2">
+                        <i class="fas fa-palette text-primary text-sm md:text-base"></i>
                         Color Palette Generator
                     </h1>
                 </div>
@@ -110,18 +121,18 @@
                             <label class="label">
                                 <span class="label-text font-semibold">Base Color</span>
                             </label>
-                            <div class="flex gap-2 items-center">
+                            <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
                                 <input type="color" 
                                        x-model="baseColor" 
                                        class="color-input"
                                        @input="generatePalette()">
                                 <input type="text" 
                                        x-model="baseColor" 
-                                       class="input input-bordered flex-1"
+                                       class="input input-bordered flex-1 px-3 py-2"
                                        placeholder="#8B5CF6"
                                        @input="generatePalette()">
                                 <button @click="randomBaseColor()" 
-                                        class="btn btn-outline btn-primary">
+                                        class="btn btn-outline btn-primary w-full sm:w-auto">
                                     <i class="fas fa-dice"></i>
                                     Random
                                 </button>
@@ -219,13 +230,14 @@
         <!-- Current Palette Display -->
         <div class="card bg-white shadow-xl mb-8">
             <div class="card-body">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="card-title">
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
+                    <h2 class="card-title flex-wrap">
                         <i class="fas fa-palette text-primary"></i>
-                        Current Palette
-                        <span class="badge badge-outline" x-text="paletteType.charAt(0).toUpperCase() + paletteType.slice(1).replace('-', ' ')"></span>
+                        <span class="hidden xs:inline">Current Palette</span>
+                        <span class="xs:hidden">Palette</span>
+                        <span class="badge badge-outline text-xs" x-text="paletteType.charAt(0).toUpperCase() + paletteType.slice(1).replace('-', ' ')"></span>
                     </h2>
-                    <div class="text-sm text-gray-500" x-text="'Generated: ' + new Date().toLocaleTimeString()"></div>
+                    <div class="text-xs sm:text-sm text-gray-500" x-text="'Generated: ' + new Date().toLocaleTimeString()"></div>
                 </div>
                 
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
