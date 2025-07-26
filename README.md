@@ -47,6 +47,7 @@ This project is a showcase of multiple mini-tools and utilities built within the
 | 🌦️ **Weather Dashboard** | Local weather information and forecasts | ✅ Complete | API Integration & Data Visualization |
 | 📷 **Image Filter Studio** | Apply filters and effects to uploaded images | ✅ Complete | Canvas API & Image Processing |
 | 🎵 **Music Player** | Simple audio player with playlist support | ✅ Complete | Web Audio API & Media Controls |
+| 📊 **Data Visualizer** | Transform data into interactive charts and graphs | ✅ Complete | Chart.js & Data Processing |
 
 ### 🎯 Tool Features
 
@@ -101,6 +102,18 @@ This project is a showcase of multiple mini-tools and utilities built within the
 - Keyboard shortcuts for all functions
 - Progress tracking with seek functionality
 - Settings persistence across sessions
+
+#### 📊 Data Visualizer
+- **6 Chart Types**: Bar, Line, Pie, Doughnut, Scatter, and Area charts
+- **Multiple Data Formats**: CSV, JSON, and Excel file support
+- **Interactive Features**: Real-time filtering, search, and data grouping
+- **Smart Detection**: Automatically identifies numeric vs text columns
+- **Sample Datasets**: Pre-loaded examples (sales, demographics, financial, survey data)
+- **Export Options**: Download charts as PNG or data as CSV/JSON
+- **Responsive Design**: Optimized layout for all screen sizes
+- **Chart Customization**: Toggle legend, grid, animation, and responsiveness
+- **Advanced Filtering**: Column-specific filters with dropdown suggestions
+- **Data Management**: Pagination for large datasets and data validation
 
 ## 🚀 Quick Start
 

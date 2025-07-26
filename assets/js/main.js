@@ -3,7 +3,7 @@ function hubApp() {
     return {
         searchTerm: '',
         filterStatus: 'all',
-        completedTools: 9,
+        completedTools: 10,
         
         // Sample tools data - will be updated as real tools are built
         tools: [
@@ -50,11 +50,11 @@ function hubApp() {
             {
                 id: 'data-visualizer',
                 name: 'Data Visualizer',
-                description: 'Create interactive charts from CSV data',
+                description: 'Transform your data into beautiful, interactive charts and graphs',
                 icon: '📊',
-                status: 'planned',
-                statusLabel: 'Planned',
-                technologies: ['Chart.js', 'CSV Parser', 'Interactive'],
+                status: 'complete',
+                statusLabel: 'Complete',
+                technologies: ['Chart.js', 'CSV Parser', 'JSON Import', 'Interactive'],
                 url: './tools/data-visualizer/'
             },
             {

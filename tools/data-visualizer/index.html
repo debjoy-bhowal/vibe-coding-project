@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Visualizer - Vibe Tools</title>
+    <meta name="description" content="Interactive data visualization tool with support for CSV, JSON, and various chart types">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- DaisyUI -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@3.9.4/dist/full.css" rel="stylesheet" type="text/css" />
+    
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Chart.js plugins -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#8B5CF6',
+                        secondary: '#06B6D4',
+                        accent: '#F59E0B',
+                    },
+                    screens: {
+                        'xs': '375px',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .glass-effect {
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            background-color: rgba(255, 255, 255, 0.75);
+            border: 1px solid rgba(209, 213, 219, 0.3);
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+        
+        .data-table {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .column-selector {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .drag-drop-area {
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .drag-drop-area.dragover {
+            border-color: #8B5CF6;
+            background-color: rgba(139, 92, 246, 0.1);
+        }
+        
+        .sample-data-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .sample-data-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .chart-type-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+        }
+        
+        .chart-type-option {
+            aspect-ratio: 1;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .chart-type-option:hover {
+            border-color: #8B5CF6;
+            background-color: rgba(139, 92, 246, 0.1);
+        }
+        
+        .chart-type-option.active {
+            border-color: #8B5CF6;
+            background-color: #8B5CF6;
+            color: white;
+        }
+        
+        .filter-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            background-color: #f3f4f6;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            margin: 0.25rem;
+        }
+        
+        .filter-chip button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #6b7280;
+        }
+        
+        .filter-chip button:hover {
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body class="min-h-screen gradient-bg" x-data="dataVisualizerApp()">
+    
+    <!-- Header -->
+    <header class="glass-effect shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <a href="../../index.html" class="btn btn-ghost btn-sm">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        <span class="hidden md:inline">Back to Hub</span>
+                    </a>
+                    <div class="flex items-center space-x-2">
+                        <div class="text-2xl md:text-3xl">📊</div>
+                        <div>
+                            <h1 class="text-lg md:text-2xl font-bold text-gray-800">
+                                Data Visualizer
+                            </h1>
+                            <p class="text-xs md:text-sm text-gray-600 hidden sm:block">Transform your data into beautiful charts and insights</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button @click="exportChart()" class="btn btn-outline btn-sm" :disabled="!hasChart()">
+                        <i class="fas fa-download"></i>
+                        <span class="hidden sm:inline">Export</span>
+                    </button>
+                    <button @click="showHelp = true" class="btn btn-ghost btn-sm">
+                        <i class="fas fa-question-circle"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        
+        <!-- Data Import Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+            
+            <!-- Data Upload -->
+            <div class="lg:col-span-2">
+                <div class="glass-effect rounded-xl p-6 shadow-lg">
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <i class="fas fa-upload text-primary"></i>
+                        Import Data
+                    </h2>
+                    
+                    <!-- File Upload Area -->
+                    <div 
+                        class="drag-drop-area p-8 text-center mb-4"
+                        @dragover.prevent="dragover = true"
+                        @dragleave.prevent="dragover = false"
+                        @drop.prevent="handleFileDrop($event)"
+                        :class="{'dragover': dragover}"
+                    >
+                        <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                        <p class="text-gray-600 mb-4">Drag & drop your CSV or JSON file here</p>
+                        <p class="text-sm text-gray-500 mb-4">or</p>
+                        <input 
+                            type="file" 
+                            id="fileInput" 
+                            accept=".csv,.json,.xlsx"
+                            @change="handleFileSelect($event)"
+                            class="hidden"
+                        >
+                        <label for="fileInput" class="btn btn-primary">
+                            <i class="fas fa-folder-open mr-2"></i>
+                            Choose File
+                        </label>
+                    </div>
+                    
+                    <!-- Manual Data Entry -->
+                    <div class="divider">OR</div>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="label">
+                                <span class="label-text font-semibold">Paste CSV Data</span>
+                            </label>
+                            <textarea 
+                                x-model="csvInput"
+                                @input="parseCSVInput()"
+                                placeholder="Name,Value,Category&#10;Product A,120,Electronics&#10;Product B,80,Clothing&#10;Product C,200,Electronics"
+                                class="textarea textarea-bordered w-full h-32"
+                            ></textarea>
+                        </div>
+                        
+                        <div class="flex flex-wrap gap-2">
+                            <button @click="loadSampleData('sales')" class="btn btn-outline btn-sm">
+                                <i class="fas fa-chart-line mr-1"></i>
+                                Sales Data
+                            </button>
+                            <button @click="loadSampleData('demographics')" class="btn btn-outline btn-sm">
+                                <i class="fas fa-users mr-1"></i>
+                                Demographics
+                            </button>
+                            <button @click="loadSampleData('financial')" class="btn btn-outline btn-sm">
+                                <i class="fas fa-dollar-sign mr-1"></i>
+                                Financial
+                            </button>
+                            <button @click="loadSampleData('survey')" class="btn btn-outline btn-sm">
+                                <i class="fas fa-poll mr-1"></i>
+                                Survey Results
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Stats -->
+            <div>
+                <div class="glass-effect rounded-xl p-6 shadow-lg">
+                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <i class="fas fa-info-circle text-primary"></i>
+                        Data Summary
+                    </h3>
+                    
+                    <div class="space-y-3" x-show="data.length > 0">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Rows:</span>
+                            <span class="font-semibold" x-text="data.length"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Columns:</span>
+                            <span class="font-semibold" x-text="columns.length"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Numeric Columns:</span>
+                            <span class="font-semibold" x-text="numericColumns.length"></span>
+                        </div>
+                        <div class="divider my-2"></div>
+                        <div class="text-sm">
+                            <div class="font-medium mb-2">Columns:</div>
+                            <div class="space-y-1">
+                                <template x-for="column in columns" :key="column">
+                                    <div class="flex items-center justify-between text-xs">
+                                        <span x-text="column"></span>
+                                        <span 
+                                            class="badge badge-xs"
+                                            :class="numericColumns.includes(column) ? 'badge-primary' : 'badge-secondary'"
+                                            x-text="numericColumns.includes(column) ? 'Numeric' : 'Text'"
+                                        ></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div x-show="data.length === 0" class="text-center text-gray-500">
+                        <i class="fas fa-database text-2xl mb-2"></i>
+                        <p>No data loaded</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Chart Configuration and Display -->
+        <div x-show="data.length > 0" class="grid grid-cols-1 xl:grid-cols-4 gap-8 mb-8">
+            
+            <!-- Chart Type Selection -->
+            <div>
+                <div class="glass-effect rounded-xl p-6 shadow-lg">
+                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <i class="fas fa-chart-pie text-primary"></i>
+                        Chart Type
+                    </h3>
+                    
+                    <div class="space-y-3">
+                        <template x-for="type in chartTypes" :key="type.id">
+                            <div 
+                                @click="selectedChartType = type.id; updateChart()"
+                                class="chart-type-option"
+                                :class="{'active': selectedChartType === type.id}"
+                            >
+                                <i :class="type.icon" class="text-xl"></i>
+                                <span class="text-sm font-medium" x-text="type.name"></span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Configuration and Chart Column -->
+            <div class="xl:col-span-3 space-y-8">
+                
+                <!-- Data Configuration -->
+                <div class="glass-effect rounded-xl p-6 shadow-lg">
+                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <i class="fas fa-cogs text-primary"></i>
+                        Configuration
+                    </h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <!-- X-Axis -->
+                        <div>
+                            <label class="label">
+                                <span class="label-text font-medium">X-Axis</span>
+                            </label>
+                            <select x-model="xAxis" @change="updateChart()" class="select select-bordered w-full">
+                                <option value="">Select column...</option>
+                                <template x-for="column in columns" :key="column">
+                                    <option :value="column" x-text="column"></option>
+                                </template>
+                            </select>
+                        </div>
+                        
+                        <!-- Y-Axis -->
+                        <div>
+                            <label class="label">
+                                <span class="label-text font-medium">Y-Axis</span>
+                            </label>
+                            <select x-model="yAxis" @change="updateChart()" class="select select-bordered w-full">
+                                <option value="">Select column...</option>
+                                <template x-for="column in numericColumns" :key="column">
+                                    <option :value="column" x-text="column"></option>
+                                </template>
+                            </select>
+                        </div>
+                        
+                        <!-- Group By (for applicable charts) -->
+                        <div x-show="['bar', 'line', 'doughnut'].includes(selectedChartType)">
+                            <label class="label">
+                                <span class="label-text font-medium">Group By</span>
+                            </label>
+                            <select x-model="groupBy" @change="updateChart()" class="select select-bordered w-full">
+                                <option value="">No grouping</option>
+                                <template x-for="column in columns" :key="column">
+                                    <option :value="column" x-text="column"></option>
+                                </template>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Chart Options -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="form-control">
+                            <label class="label cursor-pointer">
+                                <span class="label-text">Show Legend</span>
+                                <input type="checkbox" x-model="chartOptions.showLegend" @change="updateChart()" class="toggle toggle-primary">
+                            </label>
+                        </div>
+                        <div class="form-control">
+                            <label class="label cursor-pointer">
+                                <span class="label-text">Show Grid</span>
+                                <input type="checkbox" x-model="chartOptions.showGrid" @change="updateChart()" class="toggle toggle-primary">
+                            </label>
+                        </div>
+                        <div class="form-control">
+                            <label class="label cursor-pointer">
+                                <span class="label-text">Responsive</span>
+                                <input type="checkbox" x-model="chartOptions.responsive" @change="updateChart()" class="toggle toggle-primary">
+                            </label>
+                        </div>
+                        <div class="form-control">
+                            <label class="label cursor-pointer">
+                                <span class="label-text">Animation</span>
+                                <input type="checkbox" x-model="chartOptions.animation" @change="updateChart()" class="toggle toggle-primary">
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Chart Display -->
+                <div class="glass-effect rounded-xl p-6 shadow-lg">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xl font-semibold flex items-center gap-2">
+                            <i class="fas fa-chart-area text-primary"></i>
+                            <span x-text="chartTitle"></span>
+                        </h3>
+                        <div class="flex gap-2">
+                            <button @click="toggleFullscreen()" class="btn btn-ghost btn-sm">
+                                <i class="fas fa-expand"></i>
+                            </button>
+                            <button @click="downloadChart()" class="btn btn-ghost btn-sm">
+                                <i class="fas fa-download"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Chart Status -->
+                    <div x-show="!xAxis || !yAxis" class="text-center text-gray-500 py-8">
+                        <i class="fas fa-chart-bar text-4xl mb-4"></i>
+                        <p class="text-sm">Please select both X and Y axes to display the chart</p>
+                    </div>
+                    
+                    <!-- Chart Container -->
+                    <div x-show="xAxis && yAxis" class="chart-container">
+                        <canvas id="mainChart"></canvas>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+        
+        <!-- Data Table -->
+        <div x-show="data.length > 0" class="glass-effect rounded-xl p-6 shadow-lg mb-8">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+                <h3 class="text-lg font-semibold flex items-center gap-2">
+                    <i class="fas fa-table text-primary"></i>
+                    Data Table
+                    <span class="badge badge-primary" x-text="filteredData.length + ' rows'"></span>
+                </h3>
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <input 
+                        type="text" 
+                        x-model="searchQuery"
+                        @input="filterData()"
+                        placeholder="Search data..."
+                        class="input input-bordered input-sm w-full sm:w-auto"
+                    >
+                    <div class="flex gap-2">
+                        <button @click="exportData('csv')" class="btn btn-outline btn-sm flex-1 sm:flex-none">
+                            <i class="fas fa-file-csv"></i>
+                            CSV
+                        </button>
+                        <button @click="exportData('json')" class="btn btn-outline btn-sm flex-1 sm:flex-none">
+                            <i class="fas fa-file-code"></i>
+                            JSON
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Active Filters -->
+            <div x-show="activeFilters.length > 0" class="mb-4">
+                <div class="text-sm text-gray-600 mb-2">Active Filters:</div>
+                <div class="flex flex-wrap gap-1">
+                    <template x-for="filter in activeFilters" :key="filter.id">
+                        <div class="filter-chip">
+                            <span x-text="filter.column + ': ' + filter.value"></span>
+                            <button @click="removeFilter(filter.id)">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </template>
+                    <button @click="clearAllFilters()" class="btn btn-ghost btn-xs">
+                        Clear All
+                    </button>
+                </div>
+            </div>
+            
+            <div class="data-table overflow-x-auto">
+                <table class="table table-zebra w-full">
+                    <thead>
+                        <tr>
+                            <template x-for="column in columns" :key="column">
+                                <th>
+                                    <div class="flex items-center justify-between">
+                                        <span x-text="column"></span>
+                                        <div class="dropdown dropdown-end">
+                                            <label tabindex="0" class="btn btn-ghost btn-xs">
+                                                <i class="fas fa-filter"></i>
+                                            </label>
+                                            <div tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
+                                                <div class="form-control">
+                                                    <input 
+                                                        type="text" 
+                                                        :placeholder="'Filter ' + column"
+                                                        @keyup.enter="addFilter(column, $event.target.value)"
+                                                        class="input input-bordered input-xs"
+                                                    >
+                                                </div>
+                                                <div class="divider my-1"></div>
+                                                <template x-for="value in getUniqueValues(column).slice(0, 5)" :key="value">
+                                                    <a @click="addFilter(column, value)" class="text-xs">
+                                                        <span x-text="value"></span>
+                                                    </a>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </th>
+                            </template>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="(row, index) in paginatedData" :key="index">
+                            <tr>
+                                <template x-for="column in columns" :key="column">
+                                    <td x-text="row[column]"></td>
+                                </template>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            <div x-show="filteredData.length > itemsPerPage" class="flex items-center justify-between mt-4">
+                <div class="text-sm text-gray-600">
+                    Showing <span x-text="(currentPage - 1) * itemsPerPage + 1"></span> to 
+                    <span x-text="Math.min(currentPage * itemsPerPage, filteredData.length)"></span> of 
+                    <span x-text="filteredData.length"></span> rows
+                </div>
+                <div class="btn-group">
+                    <button @click="currentPage = Math.max(1, currentPage - 1)" class="btn btn-sm" :disabled="currentPage === 1">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <span class="btn btn-sm" x-text="'Page ' + currentPage + ' of ' + totalPages"></span>
+                    <button @click="currentPage = Math.min(totalPages, currentPage + 1)" class="btn btn-sm" :disabled="currentPage === totalPages">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+    </main>
+
+    <!-- Help Modal -->
+    <div x-show="showHelp" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+         @click.self="showHelp = false">
+        
+        <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold">How to Use Data Visualizer</h2>
+                    <button @click="showHelp = false" class="btn btn-ghost btn-sm">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="space-y-6">
+                    <div>
+                        <h3 class="text-lg font-semibold mb-2">Importing Data</h3>
+                        <ul class="list-disc list-inside space-y-1 text-gray-600">
+                            <li>Upload CSV, JSON, or Excel files using drag & drop or file selector</li>
+                            <li>Paste CSV data directly into the text area</li>
+                            <li>Use sample datasets to get started quickly</li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-lg font-semibold mb-2">Creating Charts</h3>
+                        <ul class="list-disc list-inside space-y-1 text-gray-600">
+                            <li>Select appropriate chart type based on your data</li>
+                            <li>Choose X and Y axis columns</li>
+                            <li>Use grouping for categorical data analysis</li>
+                            <li>Customize appearance with chart options</li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-lg font-semibold mb-2">Data Analysis</h3>
+                        <ul class="list-disc list-inside space-y-1 text-gray-600">
+                            <li>Filter data using column-specific filters</li>
+                            <li>Search across all data using the search box</li>
+                            <li>Export filtered data as CSV or JSON</li>
+                            <li>View data summary and statistics</li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-lg font-semibold mb-2">Supported Formats</h3>
+                        <ul class="list-disc list-inside space-y-1 text-gray-600">
+                            <li><strong>CSV:</strong> Comma-separated values with headers</li>
+                            <li><strong>JSON:</strong> Array of objects or nested data</li>
+                            <li><strong>Excel:</strong> .xlsx files (first sheet only)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast toast-top toast-end z-[60]" x-show="showToast" x-transition>
+        <div class="alert" :class="toastType === 'success' ? 'alert-success' : 'alert-error'">
+            <i :class="toastType === 'success' ? 'fas fa-check' : 'fas fa-exclamation-triangle'"></i>
+            <span x-text="toastMessage"></span>
+        </div>
+    </div>
+
+    <script src="../../assets/js/utils.js"></script>
+    <script>
+        function dataVisualizerApp() {
+            // Declare chart with 'let' outside reactive scope to prevent Alpine.js conflicts
+            // This is crucial because Chart.js manipulates DOM directly
+            let chartInstance = null;
+            
+            return {
+                // Data state
+                data: [],
+                columns: [],
+                numericColumns: [],
+                csvInput: '',
+                dragover: false,
+                
+                // Chart configuration
+                selectedChartType: 'bar',
+                xAxis: '',
+                yAxis: '',
+                groupBy: '',
+                // Remove chartInstance from reactive data - now handled outside Alpine scope
+                
+                // Chart options
+                chartOptions: {
+                    showLegend: true,
+                    showGrid: true,
+                    responsive: true,
+                    animation: true
+                },
+                
+                // Chart types
+                chartTypes: [
+                    { id: 'bar', name: 'Bar Chart', icon: 'fas fa-chart-bar' },
+                    { id: 'line', name: 'Line Chart', icon: 'fas fa-chart-line' },
+                    { id: 'pie', name: 'Pie Chart', icon: 'fas fa-chart-pie' },
+                    { id: 'doughnut', name: 'Doughnut', icon: 'far fa-circle' },
+                    { id: 'scatter', name: 'Scatter Plot', icon: 'fas fa-braille' },
+                    { id: 'area', name: 'Area Chart', icon: 'fas fa-chart-area' }
+                ],
+                
+                // Table and filtering
+                searchQuery: '',
+                filteredData: [],
+                activeFilters: [],
+                currentPage: 1,
+                itemsPerPage: 10,
+                
+                // UI state
+                showHelp: false,
+                showToast: false,
+                toastMessage: '',
+                toastType: 'success',
+                
+                // Computed properties
+                get chartTitle() {
+                    if (!this.xAxis || !this.yAxis) return 'Chart';
+                    return `${this.yAxis} by ${this.xAxis}`;
+                },
+                
+                get paginatedData() {
+                    const start = (this.currentPage - 1) * this.itemsPerPage;
+                    const end = start + this.itemsPerPage;
+                    return this.filteredData.slice(start, end);
+                },
+                
+                get totalPages() {
+                    return Math.ceil(this.filteredData.length / this.itemsPerPage);
+                },
+                
+                // Initialize
+                init() {
+                    this.filteredData = this.data;
+                    this.loadSampleData('sales'); // Load sample data by default
+                },
+                
+                // Chart management functions (following Alpine.js + Chart.js best practices)
+                clearChartData() {
+                    if (chartInstance && chartInstance.data) {
+                        chartInstance.data.labels.length = 0;
+                        chartInstance.data.datasets.forEach(dataset => {
+                            dataset.data.length = 0;
+                        });
+                    }
+                },
+                
+                setChartData(data) {
+                    if (!chartInstance || !data.labels || !data.datasets) return;
+                    
+                    // Update labels
+                    chartInstance.data.labels = [...data.labels];
+                    
+                    // Update datasets
+                    chartInstance.data.datasets.length = 0; // Clear existing datasets
+                    data.datasets.forEach(dataset => {
+                        chartInstance.data.datasets.push({...dataset});
+                    });
+                },
+                
+                destroyChart() {
+                    if (chartInstance) {
+                        chartInstance.destroy();
+                        chartInstance = null;
+                    }
+                },
+                
+                // File handling
+                handleFileDrop(event) {
+                    this.dragover = false;
+                    const files = event.dataTransfer.files;
+                    if (files.length > 0) {
+                        this.processFile(files[0]);
+                    }
+                },
+                
+                handleFileSelect(event) {
+                    const file = event.target.files[0];
+                    if (file) {
+                        this.processFile(file);
+                    }
+                },
+                
+                processFile(file) {
+                    const reader = new FileReader();
+                    const extension = file.name.split('.').pop().toLowerCase();
+                    
+                    reader.onload = (e) => {
+                        try {
+                            if (extension === 'csv') {
+                                this.parseCSV(e.target.result);
+                            } else if (extension === 'json') {
+                                this.parseJSON(e.target.result);
+                            } else {
+                                this.showToastMessage('Unsupported file format', 'error');
+                            }
+                        } catch (error) {
+                            this.showToastMessage('Error parsing file: ' + error.message, 'error');
+                        }
+                    };
+                    
+                    reader.readAsText(file);
+                },
+                
+                parseCSVInput() {
+                    if (this.csvInput.trim()) {
+                        this.parseCSV(this.csvInput);
+                    }
+                },
+                
+                parseCSV(csvText) {
+                    const lines = csvText.trim().split('\n');
+                    if (lines.length < 2) {
+                        this.showToastMessage('CSV must have at least 2 lines (header + data)', 'error');
+                        return;
+                    }
+                    
+                    // Parse header
+                    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+                    
+                    // Parse data
+                    const data = [];
+                    for (let i = 1; i < lines.length; i++) {
+                        const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+                        if (values.length === headers.length) {
+                            const row = {};
+                            headers.forEach((header, index) => {
+                                const value = values[index];
+                                // Try to parse as number
+                                const numValue = parseFloat(value);
+                                row[header] = isNaN(numValue) ? value : numValue;
+                            });
+                            data.push(row);
+                        }
+                    }
+                    
+                    this.setData(data, headers);
+                },
+                
+                parseJSON(jsonText) {
+                    const jsonData = JSON.parse(jsonText);
+                    let data = Array.isArray(jsonData) ? jsonData : [jsonData];
+                    
+                    if (data.length === 0) {
+                        this.showToastMessage('No data found in JSON file', 'error');
+                        return;
+                    }
+                    
+                    // Extract columns from first object
+                    const headers = Object.keys(data[0]);
+                    this.setData(data, headers);
+                },
+                
+                setData(data, headers) {
+                    this.data = data;
+                    this.columns = headers;
+                    this.numericColumns = this.detectNumericColumns();
+                    this.filteredData = [...data];
+                    
+                    // Auto-select axes if possible
+                    if (this.columns.length > 0) {
+                        this.xAxis = this.columns[0];
+                    }
+                    if (this.numericColumns.length > 0) {
+                        this.yAxis = this.numericColumns[0];
+                    }
+                    
+                    this.currentPage = 1;
+                    this.clearAllFilters();
+                    
+                    // Wait for Alpine.js to update the DOM, then update chart
+                    this.$nextTick(() => {
+                        setTimeout(() => {
+                            this.updateChart();
+                        }, 150); // Reduced delay as we now handle updates more efficiently
+                    });
+                    
+                    this.showToastMessage(`Loaded ${data.length} rows with ${headers.length} columns`, 'success');
+                },
+                
+                detectNumericColumns() {
+                    if (this.data.length === 0) return [];
+                    
+                    return this.columns.filter(column => {
+                        // Check if most values in this column are numeric
+                        const numericCount = this.data.reduce((count, row) => {
+                            return count + (typeof row[column] === 'number' ? 1 : 0);
+                        }, 0);
+                        return numericCount / this.data.length > 0.5;
+                    });
+                },
+                
+                // Sample data
+                loadSampleData(type) {
+                    const sampleData = this.getSampleData(type);
+                    this.csvInput = this.arrayToCSV(sampleData);
+                    this.parseCSV(this.csvInput);
+                },
+                
+                getSampleData(type) {
+                    const samples = {
+                        sales: [
+                            { Month: 'Jan', Sales: 12000, Product: 'A', Region: 'North' },
+                            { Month: 'Feb', Sales: 15000, Product: 'A', Region: 'North' },
+                            { Month: 'Mar', Sales: 18000, Product: 'A', Region: 'North' },
+                            { Month: 'Jan', Sales: 8000, Product: 'B', Region: 'South' },
+                            { Month: 'Feb', Sales: 9500, Product: 'B', Region: 'South' },
+                            { Month: 'Mar', Sales: 11000, Product: 'B', Region: 'South' },
+                            { Month: 'Jan', Sales: 6000, Product: 'C', Region: 'East' },
+                            { Month: 'Feb', Sales: 7200, Product: 'C', Region: 'East' },
+                            { Month: 'Mar', Sales: 8500, Product: 'C', Region: 'East' }
+                        ],
+                        demographics: [
+                            { Age_Group: '18-25', Count: 1200, Gender: 'Male', City: 'New York' },
+                            { Age_Group: '18-25', Count: 1400, Gender: 'Female', City: 'New York' },
+                            { Age_Group: '26-35', Count: 2100, Gender: 'Male', City: 'New York' },
+                            { Age_Group: '26-35', Count: 2300, Gender: 'Female', City: 'New York' },
+                            { Age_Group: '36-45', Count: 1800, Gender: 'Male', City: 'Los Angeles' },
+                            { Age_Group: '36-45', Count: 1900, Gender: 'Female', City: 'Los Angeles' },
+                            { Age_Group: '46-55', Count: 1500, Gender: 'Male', City: 'Chicago' },
+                            { Age_Group: '46-55', Count: 1600, Gender: 'Female', City: 'Chicago' }
+                        ],
+                        financial: [
+                            { Quarter: 'Q1 2023', Revenue: 250000, Expenses: 180000, Profit: 70000 },
+                            { Quarter: 'Q2 2023', Revenue: 280000, Expenses: 195000, Profit: 85000 },
+                            { Quarter: 'Q3 2023', Revenue: 320000, Expenses: 210000, Profit: 110000 },
+                            { Quarter: 'Q4 2023', Revenue: 380000, Expenses: 245000, Profit: 135000 },
+                            { Quarter: 'Q1 2024', Revenue: 420000, Expenses: 275000, Profit: 145000 }
+                        ],
+                        survey: [
+                            { Question: 'Satisfaction', Rating: 4.2, Responses: 150, Category: 'Service' },
+                            { Question: 'Quality', Rating: 4.5, Responses: 145, Category: 'Product' },
+                            { Question: 'Price', Rating: 3.8, Responses: 140, Category: 'Product' },
+                            { Question: 'Support', Rating: 4.1, Responses: 135, Category: 'Service' },
+                            { Question: 'Delivery', Rating: 4.3, Responses: 142, Category: 'Service' },
+                            { Question: 'Features', Rating: 4.0, Responses: 138, Category: 'Product' }
+                        ]
+                    };
+                    return samples[type] || samples.sales;
+                },
+                
+                arrayToCSV(data) {
+                    if (data.length === 0) return '';
+                    
+                    const headers = Object.keys(data[0]);
+                    const csvHeaders = headers.join(',');
+                    const csvRows = data.map(row => 
+                        headers.map(header => {
+                            const value = row[header];
+                            return typeof value === 'string' && value.includes(',') ? `"${value}"` : value;
+                        }).join(',')
+                    );
+                    
+                    return [csvHeaders, ...csvRows].join('\n');
+                },
+                
+                                // Chart creation (following Alpine.js + Chart.js integration best practices)
+                updateChart() {
+                    if (!this.xAxis || !this.yAxis || this.data.length === 0) {
+                        return;
+                    }
+                    
+                    // If chart exists, update it; otherwise create new one
+                    if (chartInstance) {
+                        this.updateExistingChart();
+                    } else {
+                        // Use setTimeout to ensure DOM is ready
+                        setTimeout(() => {
+                            this.createNewChart();
+                        }, 100);
+                    }
+                },
+                
+                updateExistingChart() {
+                    try {
+                        // Clear existing data efficiently
+                        this.clearChartData();
+                        
+                        // Prepare new data
+                        const chartData = this.prepareChartData();
+                        
+                        if (!chartData.labels || chartData.labels.length === 0) {
+                            return;
+                        }
+                        
+                        // Set new data
+                        this.setChartData(chartData);
+                        
+                        // Update chart type if changed
+                        if (chartInstance.config.type !== (this.selectedChartType === 'area' ? 'line' : this.selectedChartType)) {
+                            // Need to recreate chart for type change
+                            this.destroyChart();
+                            this.createNewChart();
+                            return;
+                        }
+                        
+                        // Update options
+                        chartInstance.options = this.getChartOptions();
+                        
+                        // Trigger update
+                        chartInstance.update('active');
+                        
+                    } catch (error) {
+                        console.error('Error updating chart:', error);
+                        // Fallback: recreate chart
+                        this.destroyChart();
+                        this.createNewChart();
+                    }
+                },
+                
+                createNewChart() {
+                    try {
+                        const canvas = document.getElementById('mainChart');
+                        if (!canvas) {
+                            return;
+                        }
+                        
+                        // Destroy existing chart if any
+                        this.destroyChart();
+                        
+                        // Prepare data
+                        const chartData = this.prepareChartData();
+                        
+                        if (!chartData.labels || chartData.labels.length === 0) {
+                            return;
+                        }
+                        
+                        if (!chartData.datasets || chartData.datasets.length === 0) {
+                            return;
+                        }
+                        
+                        // Create chart configuration
+                        const config = {
+                            type: this.selectedChartType === 'area' ? 'line' : this.selectedChartType,
+                            data: chartData,
+                            options: this.getChartOptions()
+                        };
+                        
+                        // Create new chart instance outside Alpine's reactive scope
+                        chartInstance = new Chart(canvas, config);
+                        
+                    } catch (error) {
+                        console.error('Error creating chart:', error);
+                        this.showToastMessage('Error creating chart: ' + error.message, 'error');
+                    }
+                },
+                
+                prepareChartData() {
+                    try {
+                        let datasets = [];
+                        let labels = [];
+                        
+                        if (this.groupBy && this.groupBy !== '') {
+                            // Grouped data
+                            const grouped = this.groupData();
+                            labels = [...new Set(this.filteredData.map(row => row[this.xAxis]))].filter(label => label !== undefined && label !== null);
+                            
+                            Object.keys(grouped).forEach((group, index) => {
+                                const data = labels.map(label => {
+                                    const items = grouped[group].filter(row => row[this.xAxis] === label);
+                                    if (items.length === 0) return 0;
+                                    
+                                    // Aggregate values (sum for now)
+                                    return items.reduce((sum, item) => {
+                                        const value = item[this.yAxis];
+                                        return sum + (typeof value === 'number' ? value : 0);
+                                    }, 0);
+                                });
+                                
+                                datasets.push({
+                                    label: group,
+                                    data: data,
+                                    backgroundColor: this.getColor(index),
+                                    borderColor: this.getColor(index),
+                                    borderWidth: 2,
+                                    fill: this.selectedChartType === 'area'
+                                });
+                            });
+                        } else {
+                            // Simple data - use filtered data
+                            const validData = this.filteredData.filter(row => 
+                                row[this.xAxis] !== undefined && 
+                                row[this.xAxis] !== null && 
+                                row[this.yAxis] !== undefined && 
+                                row[this.yAxis] !== null
+                            );
+                            
+                            labels = validData.map(row => String(row[this.xAxis]));
+                            const data = validData.map(row => {
+                                const value = row[this.yAxis];
+                                return typeof value === 'number' ? value : parseFloat(value) || 0;
+                            });
+                            
+                            datasets.push({
+                                label: this.yAxis,
+                                data: data,
+                                backgroundColor: this.selectedChartType === 'pie' || this.selectedChartType === 'doughnut' 
+                                    ? data.map((_, index) => this.getColor(index))
+                                    : this.getColor(0),
+                                borderColor: this.selectedChartType === 'pie' || this.selectedChartType === 'doughnut'
+                                    ? data.map((_, index) => this.getColor(index))
+                                    : this.getColor(0),
+                                borderWidth: 2,
+                                fill: this.selectedChartType === 'area'
+                            });
+                        }
+                        
+                        return { labels, datasets };
+                        
+                    } catch (error) {
+                        console.error('Error preparing chart data:', error);
+                        return { labels: [], datasets: [] };
+                    }
+                },
+                
+                groupData() {
+                    const grouped = {};
+                    this.filteredData.forEach(row => {
+                        const group = row[this.groupBy];
+                        if (!grouped[group]) {
+                            grouped[group] = [];
+                        }
+                        grouped[group].push(row);
+                    });
+                    return grouped;
+                },
+                
+                getChartOptions() {
+                    const options = {
+                        responsive: this.chartOptions.responsive,
+                        maintainAspectRatio: false,
+                        animation: {
+                            duration: this.chartOptions.animation ? 1000 : 0
+                        },
+                        plugins: {
+                            legend: {
+                                display: this.chartOptions.showLegend,
+                                position: 'top'
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false
+                            }
+                        }
+                    };
+                    
+                    // Add scales for non-pie charts
+                    if (!['pie', 'doughnut'].includes(this.selectedChartType)) {
+                        options.scales = {
+                            x: {
+                                display: true,
+                                title: {
+                                    display: true,
+                                    text: this.xAxis
+                                },
+                                grid: {
+                                    display: this.chartOptions.showGrid
+                                }
+                            },
+                            y: {
+                                display: true,
+                                title: {
+                                    display: true,
+                                    text: this.yAxis
+                                },
+                                grid: {
+                                    display: this.chartOptions.showGrid
+                                },
+                                beginAtZero: true
+                            }
+                        };
+                    }
+                    
+                    return options;
+                },
+                
+                getColor(index) {
+                    const colors = [
+                        '#8B5CF6', '#06B6D4', '#F59E0B', '#EF4444', '#10B981',
+                        '#6366F1', '#EC4899', '#8B5A2B', '#84CC16', '#F97316'
+                    ];
+                    return colors[index % colors.length];
+                },
+                
+                // Data filtering and searching
+                filterData() {
+                    let filtered = [...this.data];
+                    
+                    // Apply search query
+                    if (this.searchQuery.trim()) {
+                        const query = this.searchQuery.toLowerCase();
+                        filtered = filtered.filter(row => 
+                            this.columns.some(column => 
+                                String(row[column]).toLowerCase().includes(query)
+                            )
+                        );
+                    }
+                    
+                    // Apply column filters
+                    this.activeFilters.forEach(filter => {
+                        filtered = filtered.filter(row => 
+                            String(row[filter.column]).toLowerCase().includes(filter.value.toLowerCase())
+                        );
+                    });
+                    
+                    this.filteredData = filtered;
+                    this.currentPage = 1;
+                    
+                    // Update chart with filtered data (efficient update)
+                    if (chartInstance) {
+                        this.updateChart();
+                    }
+                },
+                
+                addFilter(column, value) {
+                    if (!value || value.trim() === '') return;
+                    
+                    const filterId = Date.now() + Math.random();
+                    this.activeFilters.push({
+                        id: filterId,
+                        column: column,
+                        value: value.trim()
+                    });
+                    
+                    this.filterData();
+                },
+                
+                removeFilter(filterId) {
+                    this.activeFilters = this.activeFilters.filter(f => f.id !== filterId);
+                    this.filterData();
+                },
+                
+                clearAllFilters() {
+                    this.activeFilters = [];
+                    this.searchQuery = '';
+                    this.filterData();
+                },
+                
+                getUniqueValues(column) {
+                    const values = [...new Set(this.data.map(row => row[column]))];
+                    return values.slice(0, 10); // Limit to 10 for dropdown
+                },
+                
+                // Export functions
+                exportData(format) {
+                    if (format === 'csv') {
+                        const csv = this.arrayToCSV(this.filteredData);
+                        VibeUtils.downloadFile(csv, 'data_export.csv', 'text/csv');
+                    } else if (format === 'json') {
+                        const json = JSON.stringify(this.filteredData, null, 2);
+                        VibeUtils.downloadFile(json, 'data_export.json', 'application/json');
+                    }
+                    
+                    this.showToastMessage(`Data exported as ${format.toUpperCase()}`, 'success');
+                },
+                
+                exportChart() {
+                    this.downloadChart();
+                },
+                
+                downloadChart() {
+                    if (!chartInstance) {
+                        this.showToastMessage('No chart available to download', 'error');
+                        return;
+                    }
+                    
+                    const link = document.createElement('a');
+                    link.download = 'chart.png';
+                    link.href = chartInstance.toBase64Image();
+                    link.click();
+                    
+                    this.showToastMessage('Chart downloaded as PNG', 'success');
+                },
+                
+                toggleFullscreen() {
+                    const chartContainer = document.querySelector('.chart-container').parentElement;
+                    if (document.fullscreenElement) {
+                        document.exitFullscreen();
+                    } else {
+                        chartContainer.requestFullscreen();
+                    }
+                },
+                
+                // UI helpers
+                showToastMessage(message, type = 'success') {
+                    this.toastMessage = message;
+                    this.toastType = type;
+                    this.showToast = true;
+                    setTimeout(() => {
+                        this.showToast = false;
+                    }, 3000);
+                },
+                
+                // Helper function to check if chart exists (for UI binding)
+                hasChart() {
+                    return chartInstance !== null;
+                }
+            }
+        }
+    </script>
+</body>
+</html>
