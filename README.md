@@ -49,6 +49,7 @@ This project is a showcase of multiple mini-tools and utilities built within the
 | 🎵 **Music Player** | Simple audio player with playlist support | ✅ Complete | Web Audio API & Media Controls |
 | 📊 **Data Visualizer** | Transform data into interactive charts and graphs | ✅ Complete | Chart.js & Data Processing |
 | ⌨️ **Typing Speed Tester** | Test and improve typing speed with real-time analytics | ✅ Complete | Performance Metrics & Real-time Feedback |
+| 🎨 **Pixel Art Maker** | Create pixel art with interactive canvas and export features | ✅ Complete | Canvas API & Interactive Drawing |
 
 ### 🎯 Tool Features
 
@@ -127,6 +128,18 @@ This project is a showcase of multiple mini-tools and utilities built within the
 - **Mobile Optimized**: Touch-friendly interface with responsive design
 - **Result Sharing**: Share achievements via native sharing or clipboard copy
 - **Keyboard Shortcuts**: Quick access to test controls and navigation
+
+#### 🎨 Pixel Art Maker
+- **Interactive Canvas**: Multiple grid sizes (8x8 to 48x48) with customizable pixel sizes
+- **Drawing Tools**: Paint brush, eraser, and flood fill with real-time visual feedback
+- **Color Management**: Custom color picker, preset palettes, and random palette generator
+- **Special Features**: Mirror drawing mode, grid toggle, and coordinate display
+- **Timed Challenges**: Creative challenges with customizable durations and scoring system
+- **Export Options**: Download as PNG with scaling options or generate CSS grid code
+- **Project Management**: Auto-save functionality and project persistence
+- **Advanced Controls**: Undo/redo system, keyboard shortcuts, and touch support
+- **Statistics Tracking**: Real-time pixel count, color usage, and progress analytics
+- **Mobile Responsive**: Optimized interface for both desktop and mobile devices
 
 ## 🚀 Quick Start
 

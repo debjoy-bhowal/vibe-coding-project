@@ -3,7 +3,7 @@ function hubApp() {
     return {
         searchTerm: '',
         filterStatus: 'all',
-        completedTools: 11,
+        completedTools: 12,
         
         // Sample tools data - will be updated as real tools are built
         tools: [
@@ -116,6 +116,16 @@ function hubApp() {
                 statusLabel: 'Complete',
                 technologies: ['Real-time Stats', 'Performance Analytics', 'Local Storage'],
                 url: './tools/typing-speed-tester/'
+            },
+            {
+                id: 'pixel-art-maker',
+                name: 'Pixel Art Maker',
+                description: 'Create beautiful pixel art with interactive canvas and export features',
+                icon: '🎨',
+                status: 'complete',
+                statusLabel: 'Complete',
+                technologies: ['Canvas API', 'Interactive Drawing', 'PNG Export', 'CSS Generation'],
+                url: './tools/pixel-art-maker/'
             }
         ],
 

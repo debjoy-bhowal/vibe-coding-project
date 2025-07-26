@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Art Maker - Vibe Tools</title>
+    <meta name="description" content="Create beautiful pixel art with an interactive canvas, export as PNG or CSS grid code">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- DaisyUI -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@3.9.4/dist/full.css" rel="stylesheet" type="text/css" />
+    
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#8B5CF6',
+                        secondary: '#06B6D4',
+                        accent: '#F59E0B',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .pixel-canvas {
+            display: grid;
+            user-select: none;
+            touch-action: none;
+            width: 100%;
+            max-width: min(70vh, 100%);
+            aspect-ratio: 1;
+            margin: 0 auto;
+        }
+        
+        .canvas-container {
+            width: 100%;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 200px;
+            max-height: 70vh;
+            padding: 10px;
+        }
+        
+        .pixel {
+            width: 100%;
+            height: 100%;
+            background: white;
+            cursor: crosshair;
+            transition: opacity 0.1s ease;
+        }
+        
+        .pixel:hover {
+            opacity: 0.8;
+        }
+        
+        .color-picker {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.2s ease;
+        }
+        
+        .color-picker:hover {
+            transform: scale(1.1);
+        }
+        
+        .color-picker.active {
+            border-color: #8B5CF6;
+            transform: scale(1.15);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+        
+        .tool-btn {
+            transition: all 0.2s ease;
+        }
+        
+        .tool-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .tool-btn.active {
+            background: #8B5CF6;
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .stats-card {
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.95);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        
+        .stats-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        }
+        
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .challenge-timer {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            .pixel-canvas {
+                max-width: 90vw;
+                max-height: 60vh;
+            }
+            
+            .color-picker {
+                width: 35px;
+                height: 35px;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen gradient-bg" x-data="pixelArtApp()">
+    
+    <!-- Header -->
+    <header class="bg-white/90 backdrop-blur-md shadow-lg sticky top-0 z-50 border-b border-white/20">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="btn btn-ghost btn-sm">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        <span class="hidden md:inline">Back to Hub</span>
+                    </a>
+                    <div class="flex items-center space-x-2">
+                        <div class="text-2xl md:text-3xl">🎨</div>
+                        <div>
+                            <h1 class="text-lg md:text-2xl font-bold text-gray-800">
+                                Pixel Art Maker
+                            </h1>
+                            <p class="text-xs md:text-sm text-gray-600 hidden sm:block">Create beautiful pixel art with interactive canvas</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button @click="showSettings = true" class="btn btn-ghost btn-sm">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <button @click="showExportModal = true; updatePreview()" class="btn btn-primary btn-sm">
+                        <i class="fas fa-download mr-1"></i>
+                        <span class="hidden sm:inline">Export</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Challenge Timer (only visible during timed challenge) -->
+    <div x-show="challengeMode && challengeTimeLeft > 0" 
+         x-transition
+         class="bg-gradient-to-r from-orange-500 to-red-500 text-white text-center py-2">
+        <div class="challenge-timer" 
+             :class="{'pulse-animation': challengeTimeLeft <= 10}">
+            🏃‍♂️ Challenge Mode: <span x-text="formatTime(challengeTimeLeft)"></span> remaining!
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        
+        <!-- Stats Dashboard -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <!-- Canvas Size -->
+            <div class="stats-card glass-effect rounded-xl p-4 text-center">
+                <div class="stat">
+                    <div class="stat-figure text-primary">
+                        <i class="fas fa-th text-xl"></i>
+                    </div>
+                    <div class="stat-title text-xs">Canvas</div>
+                    <div class="stat-value text-primary text-sm" x-text="gridSize + 'x' + gridSize"></div>
+                    <div class="stat-desc text-xs">Pixels</div>
+                </div>
+            </div>
+            
+            <!-- Colors Used -->
+            <div class="stats-card glass-effect rounded-xl p-4 text-center">
+                <div class="stat">
+                    <div class="stat-figure text-success">
+                        <i class="fas fa-palette text-xl"></i>
+                    </div>
+                    <div class="stat-title text-xs">Colors</div>
+                    <div class="stat-value text-success text-sm" x-text="Object.keys(usedColors).length"></div>
+                    <div class="stat-desc text-xs">Used</div>
+                </div>
+            </div>
+            
+            <!-- Total Pixels -->
+            <div class="stats-card glass-effect rounded-xl p-4 text-center">
+                <div class="stat">
+                    <div class="stat-figure text-warning">
+                        <i class="fas fa-paint-brush text-xl"></i>
+                    </div>
+                    <div class="stat-title text-xs">Painted</div>
+                    <div class="stat-value text-warning text-sm" x-text="paintedPixels"></div>
+                    <div class="stat-desc text-xs">Pixels</div>
+                </div>
+            </div>
+            
+            <!-- Current Tool -->
+            <div class="stats-card glass-effect rounded-xl p-4 text-center">
+                <div class="stat">
+                    <div class="stat-figure text-info">
+                        <i class="fas" :class="currentTool === 'paint' ? 'fa-brush' : currentTool === 'erase' ? 'fa-eraser' : 'fa-fill-drip'"></i>
+                    </div>
+                    <div class="stat-title text-xs">Tool</div>
+                    <div class="stat-value text-info text-sm capitalize" x-text="currentTool"></div>
+                    <div class="stat-desc text-xs">Active</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            
+            <!-- Tools Panel -->
+            <div class="lg:col-span-1 space-y-6">
+                
+                <!-- Drawing Tools -->
+                <div class="glass-effect rounded-xl p-6">
+                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <i class="fas fa-tools text-primary"></i>
+                        Drawing Tools
+                    </h3>
+                    
+                    <div class="grid grid-cols-3 gap-2 mb-4">
+                        <button @click="setTool('paint')" 
+                                class="tool-btn btn btn-sm"
+                                :class="currentTool === 'paint' ? 'active' : 'btn-outline'">
+                            <i class="fas fa-brush"></i>
+                        </button>
+                        <button @click="setTool('erase')" 
+                                class="tool-btn btn btn-sm"
+                                :class="currentTool === 'erase' ? 'active' : 'btn-outline'">
+                            <i class="fas fa-eraser"></i>
+                        </button>
+                        <button @click="setTool('fill')" 
+                                class="tool-btn btn btn-sm"
+                                :class="currentTool === 'fill' ? 'active' : 'btn-outline'">
+                            <i class="fas fa-fill-drip"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="grid grid-cols-2 gap-2">
+                        <button @click="clearCanvas()" class="btn btn-outline btn-sm">
+                            <i class="fas fa-trash mr-1"></i>
+                            Clear
+                        </button>
+                        <button @click="undoLastAction()" class="btn btn-outline btn-sm" :disabled="!canUndo">
+                            <i class="fas fa-undo mr-1"></i>
+                            Undo
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Color Palette -->
+                <div class="glass-effect rounded-xl p-6">
+                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <i class="fas fa-palette text-primary"></i>
+                        Color Palette
+                    </h3>
+                    
+                    <!-- Current Color -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">Current Color</label>
+                        <div class="flex items-center gap-2">
+                            <input type="color" 
+                                   x-model="currentColor" 
+                                   class="w-12 h-12 rounded border-2 border-gray-300">
+                            <span class="text-sm font-mono" x-text="currentColor.toUpperCase()"></span>
+                        </div>
+                    </div>
+                    
+                    <!-- Preset Colors -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">Quick Colors</label>
+                        <div class="grid grid-cols-4 gap-2">
+                            <template x-for="color in presetColors" :key="color">
+                                <div class="color-picker" 
+                                     :style="'background-color: ' + color"
+                                     :class="{'active': currentColor === color}"
+                                     @click="currentColor = color"></div>
+                            </template>
+                        </div>
+                    </div>
+                    
+                    <!-- Palette Actions -->
+                    <div class="grid grid-cols-2 gap-2">
+                        <button @click="generateRandomPalette()" class="btn btn-outline btn-sm">
+                            <i class="fas fa-random mr-1"></i>
+                            Random
+                        </button>
+                        <button @click="addColorToPalette()" class="btn btn-outline btn-sm">
+                            <i class="fas fa-plus mr-1"></i>
+                            Save
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Special Features -->
+                <div class="glass-effect rounded-xl p-6">
+                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <i class="fas fa-magic text-primary"></i>
+                        Special Features
+                    </h3>
+                    
+                    <div class="space-y-3">
+                        <div class="form-control">
+                            <label class="label cursor-pointer">
+                                <span class="label-text">Mirror Drawing</span>
+                                <input type="checkbox" x-model="mirrorMode" class="toggle toggle-primary">
+                            </label>
+                        </div>
+                        
+                        <div class="form-control">
+                            <label class="label cursor-pointer">
+                                <span class="label-text">Grid Lines</span>
+                                <input type="checkbox" x-model="showGrid" class="toggle toggle-primary">
+                            </label>
+                        </div>
+                        
+                        <button @click="startTimedChallenge()" 
+                                class="btn btn-outline btn-sm w-full"
+                                :disabled="challengeMode">
+                            <i class="fas fa-stopwatch mr-1"></i>
+                            <span x-text="challengeMode ? 'Challenge Active' : 'Timed Challenge'"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Canvas Area -->
+            <div class="lg:col-span-3">
+                <div class="glass-effect rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold flex items-center gap-2">
+                            <i class="fas fa-canvas text-primary"></i>
+                            Canvas
+                        </h3>
+                        <div class="flex items-center gap-2">
+                            <label class="text-sm">Size:</label>
+                            <select x-model="gridSize" @change="createCanvas()" class="select select-bordered select-sm">
+                                <option value="16">16x16</option>
+                                <option value="24">24x24</option>
+                                <option value="32">32x32</option>
+                                <option value="48">48x48</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Canvas Container -->
+                    <div class="canvas-container">
+                        <div id="pixelCanvas" 
+                             class="pixel-canvas"
+                             :style="getCanvasStyle()"
+                             @mousedown="startDrawing($event)"
+                             @mousemove="draw($event)"
+                             @mouseup="stopDrawing()"
+                             @mouseleave="stopDrawing()">
+                            <!-- Pixels will be generated here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Canvas Instructions -->
+                    <div class="mt-4 text-sm text-gray-600 text-center">
+                        <p><i class="fas fa-mouse-pointer mr-1"></i> Click and drag to paint • <i class="fas fa-keyboard mr-1"></i> Press 'E' for eraser • <i class="fas fa-keyboard mr-1"></i> Press 'F' for fill</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Settings Modal -->
+    <div x-show="showSettings" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+         @click.self="showSettings = false">
+        
+        <div class="bg-white rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold">Settings</h2>
+                    <button @click="showSettings = false" class="btn btn-ghost btn-sm">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="space-y-6">
+                    <div>
+                        <label class="label">
+                            <span class="label-text font-semibold">Canvas Size</span>
+                        </label>
+                        <select x-model="gridSize" @change="createCanvas()" class="select select-bordered w-full">
+                            <option value="8">8x8 (Tiny)</option>
+                            <option value="16">16x16 (Small)</option>
+                            <option value="24">24x24 (Medium)</option>
+                            <option value="32">32x32 (Large)</option>
+                            <option value="48">48x48 (Extra Large)</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="label">
+                            <span class="label-text font-semibold">Pixel Size</span>
+                        </label>
+                        <input type="range" 
+                               x-model="pixelSize" 
+                               min="8" 
+                               max="24" 
+                               class="range range-primary">
+                        <div class="w-full flex justify-between text-xs px-2">
+                            <span>Small</span>
+                            <span>Medium</span>
+                            <span>Large</span>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="label">
+                            <span class="label-text font-semibold">Challenge Duration</span>
+                        </label>
+                        <select x-model="challengeDuration" class="select select-bordered w-full">
+                            <option value="60">1 Minute</option>
+                            <option value="120">2 Minutes</option>
+                            <option value="300">5 Minutes</option>
+                            <option value="600">10 Minutes</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-control">
+                        <label class="label cursor-pointer">
+                            <span class="label-text">Auto-save progress</span>
+                            <input type="checkbox" x-model="autoSave" class="toggle toggle-primary">
+                        </label>
+                    </div>
+                    
+                    <div class="form-control">
+                        <label class="label cursor-pointer">
+                            <span class="label-text">Show pixel coordinates</span>
+                            <input type="checkbox" x-model="showCoordinates" class="toggle toggle-primary">
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="flex gap-4 mt-8">
+                    <button @click="showSettings = false" class="btn btn-outline flex-1">Close</button>
+                    <button @click="resetSettings()" class="btn btn-ghost">Reset</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div x-show="showExportModal" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+         @click.self="showExportModal = false">
+        
+        <div class="bg-white rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold">Export Your Art</h2>
+                    <button @click="showExportModal = false" class="btn btn-ghost btn-sm">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="space-y-6">
+                    <!-- Export Options -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <button @click="exportAsPNG()" class="btn btn-primary">
+                            <i class="fas fa-image mr-2"></i>
+                            Export as PNG
+                        </button>
+                        <button @click="generateCSS()" class="btn btn-secondary">
+                            <i class="fas fa-code mr-2"></i>
+                            Get HTML Code
+                        </button>
+                    </div>
+                    
+                    <!-- Debug Info -->
+                    <div class="text-xs text-gray-500 bg-gray-100 p-2 rounded">
+                        Canvas: <span x-text="canvas ? canvas.length + 'x' + (canvas[0] ? canvas[0].length : '0') : 'not initialized'"></span> | 
+                        Grid Size: <span x-text="gridSize"></span> | 
+                        Painted: <span x-text="paintedPixels"></span>
+                        <button @click="updatePreview()" class="btn btn-xs btn-outline ml-2">Refresh Preview</button>
+                    </div>
+                    
+                    <!-- PNG Export Options -->
+                    <div class="border rounded-lg p-4">
+                        <h3 class="font-semibold mb-3">PNG Export Settings</h3>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="label">
+                                    <span class="label-text">Scale Factor</span>
+                                </label>
+                                <select x-model="exportScale" class="select select-bordered w-full">
+                                    <option value="1">1x (Original)</option>
+                                    <option value="2">2x (Double)</option>
+                                    <option value="4">4x (Quad)</option>
+                                    <option value="8">8x (Large)</option>
+                                </select>
+                            </div>
+                            <div class="form-control">
+                                <label class="label cursor-pointer">
+                                    <span class="label-text">Include transparent background</span>
+                                    <input type="checkbox" x-model="transparentBackground" class="toggle toggle-primary">
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- HTML Code Output -->
+                    <div x-show="cssCode" class="border rounded-lg p-4">
+                        <h3 class="font-semibold mb-3">Complete HTML Code</h3>
+                        <textarea x-model="cssCode" 
+                                  class="textarea textarea-bordered w-full h-40 font-mono text-sm" 
+                                  readonly></textarea>
+                        <button @click="copyCSSCode()" class="btn btn-outline btn-sm mt-2">
+                            <i class="fas fa-copy mr-1"></i>
+                            Copy to Clipboard
+                        </button>
+                    </div>
+                    
+                    <!-- Preview -->
+                    <div class="border rounded-lg p-4">
+                        <h3 class="font-semibold mb-3">Preview</h3>
+                        <div class="flex justify-center">
+                            <canvas id="previewCanvas" class="border rounded max-w-full max-h-48"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex gap-4 mt-8">
+                    <button @click="showExportModal = false" class="btn btn-outline flex-1">Close</button>
+                    <button @click="saveProject()" class="btn btn-success">
+                        <i class="fas fa-save mr-1"></i>
+                        Save Project
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast toast-top toast-end z-[60]" x-show="showToast" x-transition>
+        <div class="alert" :class="toastType === 'success' ? 'alert-success' : 'alert-error'">
+            <i :class="toastType === 'success' ? 'fas fa-check' : 'fas fa-exclamation-triangle'"></i>
+            <span x-text="toastMessage"></span>
+        </div>
+    </div>
+
+    <script src="../../assets/js/utils.js"></script>
+    <script>
+        function pixelArtApp() {
+            return {
+                // Canvas settings
+                gridSize: 16,
+                pixelSize: 16,
+                canvas: [],
+                
+                // Drawing state
+                currentTool: 'paint',
+                currentColor: '#000000',
+                isDrawing: false,
+                lastPixel: null,
+                
+                // Features
+                mirrorMode: false,
+                showGrid: true,
+                showCoordinates: false,
+                autoSave: true,
+                
+                // Challenge mode
+                challengeMode: false,
+                challengeDuration: 300,
+                challengeTimeLeft: 0,
+                challengeInterval: null,
+                
+                // Color palette
+                presetColors: [
+                    '#000000', '#FFFFFF', '#FF0000', '#00FF00',
+                    '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF',
+                    '#800000', '#008000', '#000080', '#808000',
+                    '#800080', '#008080', '#808080', '#C0C0C0'
+                ],
+                usedColors: {},
+                
+                // History for undo
+                history: [],
+                canUndo: false,
+                
+                // Stats
+                paintedPixels: 0,
+                
+                // Export
+                showExportModal: false,
+                exportScale: 4,
+                transparentBackground: false,
+                cssCode: '',
+                
+                // UI
+                showSettings: false,
+                showToast: false,
+                toastMessage: '',
+                toastType: 'success',
+                resizeTimeout: null,
+                
+                // Initialize
+                init() {
+                    this.createCanvas();
+                    this.loadProject();
+                    this.setupKeyboardShortcuts();
+                    this.setupResizeListener();
+                    this.updatePreview();
+                },
+                
+                // Canvas management
+                createCanvas() {
+                    // Create new canvas array properly
+                    this.canvas = [];
+                    for (let row = 0; row < this.gridSize; row++) {
+                        this.canvas[row] = [];
+                        for (let col = 0; col < this.gridSize; col++) {
+                            this.canvas[row][col] = '#ffffff';
+                        }
+                    }
+                    
+                    // Reset other data
+                    this.usedColors = {};
+                    this.paintedPixels = 0;
+                    this.history = [];
+                    this.canUndo = false;
+                    
+                    // Render the canvas
+                    this.renderCanvas();
+                    this.updateStats();
+                },
+                
+                renderCanvas() {
+                    const canvasElement = document.getElementById('pixelCanvas');
+                    if (!canvasElement) return;
+                    
+                    canvasElement.innerHTML = '';
+                    
+                    // Ensure canvas array exists and has correct dimensions
+                    if (!this.canvas || this.canvas.length !== this.gridSize) {
+                        this.canvas = [];
+                        for (let row = 0; row < this.gridSize; row++) {
+                            this.canvas[row] = [];
+                            for (let col = 0; col < this.gridSize; col++) {
+                                this.canvas[row][col] = '#ffffff';
+                            }
+                        }
+                    }
+                    
+                    for (let row = 0; row < this.gridSize; row++) {
+                        for (let col = 0; col < this.gridSize; col++) {
+                            const pixel = document.createElement('div');
+                            pixel.className = 'pixel';
+                            
+                            // Ensure the canvas row exists
+                            if (!this.canvas[row] || this.canvas[row].length !== this.gridSize) {
+                                this.canvas[row] = [];
+                                for (let c = 0; c < this.gridSize; c++) {
+                                    this.canvas[row][c] = '#ffffff';
+                                }
+                            }
+                            
+                            pixel.style.backgroundColor = this.canvas[row][col] || '#ffffff';
+                            pixel.dataset.row = row;
+                            pixel.dataset.col = col;
+                            
+                            if (this.showCoordinates) {
+                                pixel.title = `${col}, ${row}`;
+                            }
+                            
+                            canvasElement.appendChild(pixel);
+                        }
+                    }
+                },
+                
+                getCanvasStyle() {
+                    // Use percentage-based grid with gap compensation for perfect square aspect ratio
+                    const gapSize = this.showGrid ? '1px' : '0px';
+                    const cellSize = this.showGrid ? 
+                        `calc((100% - ${this.gridSize - 1} * ${gapSize}) / ${this.gridSize})` :
+                        `calc(100% / ${this.gridSize})`;
+                    
+                    return `
+                        grid-template-columns: repeat(${this.gridSize}, ${cellSize});
+                        grid-template-rows: repeat(${this.gridSize}, ${cellSize});
+                        gap: ${gapSize};
+                        border: ${this.showGrid ? '2px solid #9ca3af' : '1px solid #d1d5db'};
+                        background: ${this.showGrid ? '#e5e7eb' : 'transparent'};
+                        width: 100%;
+                        aspect-ratio: 1;
+                    `;
+                },
+                
+                // Drawing functions
+                startDrawing(event) {
+                    this.isDrawing = true;
+                    this.saveState();
+                    this.draw(event);
+                },
+                
+                draw(event) {
+                    if (!this.isDrawing) return;
+                    
+                    const pixel = event.target;
+                    if (!pixel.classList.contains('pixel')) return;
+                    
+                    const row = parseInt(pixel.dataset.row);
+                    const col = parseInt(pixel.dataset.col);
+                    
+                    // Avoid redrawing the same pixel
+                    if (this.lastPixel && this.lastPixel.row === row && this.lastPixel.col === col) {
+                        return;
+                    }
+                    
+                    this.lastPixel = { row, col };
+                    this.paintPixel(row, col);
+                    
+                    // Mirror mode
+                    if (this.mirrorMode) {
+                        const mirrorCol = this.gridSize - 1 - col;
+                        if (mirrorCol !== col) {
+                            this.paintPixel(row, mirrorCol);
+                        }
+                    }
+                },
+                
+                stopDrawing() {
+                    if (this.isDrawing) {
+                        this.isDrawing = false;
+                        this.lastPixel = null;
+                        this.updateStats();
+                        
+                        if (this.autoSave) {
+                            this.saveProject();
+                        }
+                    }
+                },
+                
+                paintPixel(row, col) {
+                    if (row < 0 || row >= this.gridSize || col < 0 || col >= this.gridSize) return;
+                    
+                    const oldColor = this.canvas[row][col];
+                    let newColor;
+                    
+                    switch (this.currentTool) {
+                        case 'paint':
+                            newColor = this.currentColor;
+                            this.usedColors[this.currentColor] = true;
+                            break;
+                        case 'erase':
+                            newColor = '#ffffff';
+                            break;
+                        case 'fill':
+                            this.floodFill(row, col, oldColor, this.currentColor);
+                            return;
+                    }
+                    
+                    if (oldColor !== newColor) {
+                        this.canvas[row][col] = newColor;
+                        this.updatePixelDisplay(row, col, newColor);
+                    }
+                },
+                
+                floodFill(row, col, targetColor, fillColor) {
+                    if (targetColor === fillColor) return;
+                    
+                    const stack = [{row, col}];
+                    
+                    while (stack.length > 0) {
+                        const {row: r, col: c} = stack.pop();
+                        
+                        if (r < 0 || r >= this.gridSize || c < 0 || c >= this.gridSize) continue;
+                        if (this.canvas[r][c] !== targetColor) continue;
+                        
+                        this.canvas[r][c] = fillColor;
+                        this.updatePixelDisplay(r, c, fillColor);
+                        
+                        // Add adjacent pixels
+                        stack.push({row: r + 1, col: c});
+                        stack.push({row: r - 1, col: c});
+                        stack.push({row: r, col: c + 1});
+                        stack.push({row: r, col: c - 1});
+                    }
+                    
+                    this.usedColors[fillColor] = true;
+                },
+                
+                updatePixelDisplay(row, col, color) {
+                    const canvasElement = document.getElementById('pixelCanvas');
+                    const pixelIndex = row * this.gridSize + col;
+                    const pixelElement = canvasElement.children[pixelIndex];
+                    if (pixelElement) {
+                        pixelElement.style.backgroundColor = color;
+                    }
+                },
+                
+                // Tools
+                setTool(tool) {
+                    this.currentTool = tool;
+                },
+                
+                clearCanvas() {
+                    if (confirm('Are you sure you want to clear the canvas?')) {
+                        this.saveState();
+                        this.createCanvas();
+                        this.usedColors = {};
+                        this.updateStats();
+                        this.showToastMessage('Canvas cleared!', 'success');
+                    }
+                },
+                
+                undoLastAction() {
+                    if (this.history.length > 0) {
+                        const prevState = this.history.pop();
+                        this.canvas = prevState.canvas;
+                        this.usedColors = prevState.usedColors;
+                        this.renderCanvas();
+                        this.updateStats();
+                        this.canUndo = this.history.length > 0;
+                        this.showToastMessage('Action undone!', 'success');
+                    }
+                },
+                
+                saveState() {
+                    this.history.push({
+                        canvas: this.canvas.map(row => [...row]),
+                        usedColors: {...this.usedColors}
+                    });
+                    
+                    // Limit history size
+                    if (this.history.length > 20) {
+                        this.history.shift();
+                    }
+                    
+                    this.canUndo = true;
+                },
+                
+                // Color management
+                generateRandomPalette() {
+                    const newColors = [];
+                    for (let i = 0; i < 8; i++) {
+                        const hue = Math.floor(Math.random() * 360);
+                        const saturation = 50 + Math.floor(Math.random() * 50);
+                        const lightness = 30 + Math.floor(Math.random() * 40);
+                        const color = this.hslToHex(hue, saturation, lightness);
+                        newColors.push(color);
+                    }
+                    this.presetColors = [...this.presetColors.slice(0, 8), ...newColors];
+                    this.showToastMessage('Random palette generated!', 'success');
+                },
+                
+                addColorToPalette() {
+                    if (!this.presetColors.includes(this.currentColor)) {
+                        this.presetColors.push(this.currentColor);
+                        this.showToastMessage('Color added to palette!', 'success');
+                    }
+                },
+                
+                hslToHex(h, s, l) {
+                    l /= 100;
+                    const a = s * Math.min(l, 1 - l) / 100;
+                    const f = n => {
+                        const k = (n + h / 30) % 12;
+                        const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+                        return Math.round(255 * color).toString(16).padStart(2, '0');
+                    };
+                    return `#${f(0)}${f(8)}${f(4)}`;
+                },
+                
+                // Challenge mode
+                startTimedChallenge() {
+                    this.challengeMode = true;
+                    this.challengeTimeLeft = this.challengeDuration;
+                    this.clearCanvas();
+                    
+                    this.challengeInterval = setInterval(() => {
+                        this.challengeTimeLeft--;
+                        if (this.challengeTimeLeft <= 0) {
+                            this.endChallenge();
+                        }
+                    }, 1000);
+                    
+                    this.showToastMessage(`Timed challenge started! ${this.challengeDuration / 60} minutes to create your masterpiece!`, 'success');
+                },
+                
+                endChallenge() {
+                    clearInterval(this.challengeInterval);
+                    this.challengeMode = false;
+                    this.challengeTimeLeft = 0;
+                    
+                    const score = this.calculateScore();
+                    this.showToastMessage(`Challenge completed! Score: ${score}`, 'success');
+                    
+                    // Auto-export the result
+                    setTimeout(() => {
+                        this.showExportModal = true;
+                    }, 1000);
+                },
+                
+                calculateScore() {
+                    const colorVariety = Object.keys(this.usedColors).length;
+                    const completion = (this.paintedPixels / (this.gridSize * this.gridSize)) * 100;
+                    return Math.round(colorVariety * 10 + completion);
+                },
+                
+                formatTime(seconds) {
+                    const mins = Math.floor(seconds / 60);
+                    const secs = seconds % 60;
+                    return `${mins}:${secs.toString().padStart(2, '0')}`;
+                },
+                
+                // Export functions
+                exportAsPNG() {
+                    // Only fix canvas structure if it's actually broken
+                    if (!this.canvas || this.canvas.length === 0 || this.canvas.length !== this.gridSize) {
+                        console.log('Canvas structure needs fixing for PNG export');
+                        this.ensureCanvasIntegrity();
+                    }
+                    
+                    // Double-check we have valid canvas data
+                    if (!this.canvas || this.canvas.length === 0) {
+                        this.showToastMessage('Canvas not properly initialized', 'error');
+                        return;
+                    }
+                    
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    const size = this.gridSize * this.exportScale;
+                    canvas.width = size;
+                    canvas.height = size;
+                    
+                    // Set background
+                    if (!this.transparentBackground) {
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, size, size);
+                    }
+                    
+                    // Draw pixels with safety checks
+                    for (let row = 0; row < this.gridSize; row++) {
+                        if (!this.canvas[row]) continue;
+                        for (let col = 0; col < this.gridSize; col++) {
+                            const color = this.canvas[row][col] || '#ffffff';
+                            
+                            // Only draw non-white pixels, or all pixels if not transparent
+                            if (color !== '#ffffff' || !this.transparentBackground) {
+                                ctx.fillStyle = color;
+                                ctx.fillRect(
+                                    col * this.exportScale,
+                                    row * this.exportScale,
+                                    this.exportScale,
+                                    this.exportScale
+                                );
+                            }
+                        }
+                    }
+                    
+                    // Download
+                    const link = document.createElement('a');
+                    link.download = `pixel-art-${Date.now()}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                    
+                    this.showToastMessage('PNG exported successfully!', 'success');
+                },
+                
+                generateCSS() {
+                    // Only fix canvas structure if it's actually broken
+                    if (!this.canvas || this.canvas.length === 0 || this.canvas.length !== this.gridSize) {
+                        console.log('Canvas structure needs fixing for CSS export');
+                        this.ensureCanvasIntegrity();
+                    }
+                    
+                    // Double-check we have valid canvas data
+                    if (!this.canvas || this.canvas.length === 0) {
+                        this.showToastMessage('Canvas not properly initialized', 'error');
+                        return;
+                    }
+                    
+                    // Generate complete HTML + CSS code
+                    let code = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Pixel Art</title>
+    <style>
+        .pixel-art {
+            display: grid;
+            grid-template-columns: repeat(${this.gridSize}, 1fr);
+            grid-template-rows: repeat(${this.gridSize}, 1fr);
+            gap: 0;
+            width: ${this.gridSize * 10}px;
+            height: ${this.gridSize * 10}px;
+            margin: 20px auto;
+            border: 2px solid #333;
+        }
+
+        .pixel-art > div {
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+`;
+                    
+                    // Add individual pixel styles with safety checks
+                    let pixelIndex = 0;
+                    for (let row = 0; row < this.gridSize; row++) {
+                        if (!this.canvas[row]) continue;
+                        for (let col = 0; col < this.gridSize; col++) {
+                            const color = this.canvas[row][col] || '#ffffff';
+                            if (color !== '#ffffff') {
+                                code += `        .pixel-art > div:nth-child(${pixelIndex + 1}) { background-color: ${color}; }\n`;
+                            }
+                            pixelIndex++;
+                        }
+                    }
+                    
+                    // Close CSS and add HTML body
+                    code += `    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>My Pixel Art Creation</h1>
+        <div class="pixel-art">`;
+                    
+                    // Generate HTML divs for each pixel
+                    for (let i = 0; i < this.gridSize * this.gridSize; i++) {
+                        code += '\n            <div></div>';
+                    }
+                    
+                    code += `
+        </div>
+        <p>Created with Pixel Art Maker</p>
+    </div>
+</body>
+</html>`;
+                    
+                    this.cssCode = code;
+                    this.showToastMessage('Complete HTML + CSS code generated!', 'success');
+                },
+                
+                copyCSSCode() {
+                    navigator.clipboard.writeText(this.cssCode).then(() => {
+                        this.showToastMessage('Complete HTML code copied to clipboard!', 'success');
+                    }).catch(() => {
+                        this.showToastMessage('Failed to copy HTML code', 'error');
+                    });
+                },
+                
+                updatePreview() {
+                    // Use a longer delay to ensure DOM is ready
+                    setTimeout(() => {
+                        const previewCanvas = document.getElementById('previewCanvas');
+                        if (!previewCanvas) {
+                            console.warn('Preview canvas not found');
+                            return;
+                        }
+                        
+                        // Only call ensureCanvasIntegrity if canvas is truly broken
+                        if (!this.canvas || this.canvas.length === 0 || this.canvas.length !== this.gridSize) {
+                            console.log('Canvas structure needs fixing, calling ensureCanvasIntegrity');
+                            this.ensureCanvasIntegrity();
+                        }
+                        
+                        // Double-check that we have a valid canvas
+                        if (!this.canvas || this.canvas.length === 0) {
+                            console.warn('Canvas not initialized');
+                            return;
+                        }
+                        
+                        const ctx = previewCanvas.getContext('2d');
+                        const size = Math.min(200, this.gridSize * 8);
+                        const pixelSize = size / this.gridSize;
+                        
+                        previewCanvas.width = size;
+                        previewCanvas.height = size;
+                        
+                        // Clear canvas with white background
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, size, size);
+                        
+                        // Draw pixels with additional safety checks
+                        for (let row = 0; row < this.gridSize; row++) {
+                            if (!this.canvas[row]) continue;
+                            for (let col = 0; col < this.gridSize; col++) {
+                                const color = this.canvas[row][col] || '#ffffff';
+                                ctx.fillStyle = color;
+                                ctx.fillRect(
+                                    col * pixelSize,
+                                    row * pixelSize,
+                                    pixelSize,
+                                    pixelSize
+                                );
+                            }
+                        }
+                        
+                        console.log('Preview updated successfully');
+                    }, 200);
+                },
+                
+                // Helper function to ensure canvas integrity
+                ensureCanvasIntegrity() {
+                    // Create canvas if it doesn't exist
+                    if (!this.canvas || this.canvas.length === 0) {
+                        this.canvas = [];
+                        for (let row = 0; row < this.gridSize; row++) {
+                            this.canvas[row] = [];
+                            for (let col = 0; col < this.gridSize; col++) {
+                                this.canvas[row][col] = '#ffffff';
+                            }
+                        }
+                        return;
+                    }
+                    
+                    // Fix canvas dimensions if they don't match - preserve existing data when possible
+                    if (this.canvas.length !== this.gridSize) {
+                        const oldCanvas = this.canvas;
+                        this.canvas = [];
+                        for (let row = 0; row < this.gridSize; row++) {
+                            this.canvas[row] = [];
+                            for (let col = 0; col < this.gridSize; col++) {
+                                // Preserve existing color if it exists, otherwise use white
+                                this.canvas[row][col] = (oldCanvas[row] && oldCanvas[row][col]) ? oldCanvas[row][col] : '#ffffff';
+                            }
+                        }
+                        return;
+                    }
+                    
+                    // Fix individual rows if needed - preserve existing colors
+                    for (let row = 0; row < this.gridSize; row++) {
+                        if (!this.canvas[row] || this.canvas[row].length !== this.gridSize) {
+                            const oldRow = this.canvas[row] || [];
+                            this.canvas[row] = [];
+                            for (let col = 0; col < this.gridSize; col++) {
+                                // Preserve existing color if it exists, otherwise use white
+                                this.canvas[row][col] = oldRow[col] || '#ffffff';
+                            }
+                        }
+                    }
+                },
+                
+                // Project management
+                saveProject() {
+                    const project = {
+                        canvas: this.canvas,
+                        gridSize: this.gridSize,
+                        usedColors: this.usedColors,
+                        presetColors: this.presetColors,
+                        timestamp: Date.now()
+                    };
+                    
+                    localStorage.setItem('pixelArtProject', JSON.stringify(project));
+                    this.showToastMessage('Project saved!', 'success');
+                },
+                
+                loadProject() {
+                    const saved = localStorage.getItem('pixelArtProject');
+                    if (saved) {
+                        try {
+                            const project = JSON.parse(saved);
+                            this.canvas = project.canvas || this.canvas;
+                            this.gridSize = project.gridSize || this.gridSize;
+                            this.usedColors = project.usedColors || {};
+                            this.presetColors = project.presetColors || this.presetColors;
+                            this.renderCanvas();
+                            this.updateStats();
+                        } catch (e) {
+                            console.error('Failed to load project:', e);
+                        }
+                    }
+                },
+                
+                // Statistics
+                updateStats() {
+                    // Only fix canvas structure if it's actually broken
+                    if (!this.canvas || this.canvas.length === 0 || this.canvas.length !== this.gridSize) {
+                        console.log('Canvas structure needs fixing for stats update');
+                        this.ensureCanvasIntegrity();
+                    }
+                    
+                    this.paintedPixels = 0;
+                    
+                    // Safety check to prevent errors
+                    if (!this.canvas || this.canvas.length === 0) {
+                        return;
+                    }
+                    
+                    for (let row = 0; row < this.gridSize; row++) {
+                        // Check if row exists
+                        if (!this.canvas[row]) {
+                            continue;
+                        }
+                        
+                        for (let col = 0; col < this.gridSize; col++) {
+                            // Check if column exists and has a valid color
+                            if (this.canvas[row][col] && this.canvas[row][col] !== '#ffffff') {
+                                this.paintedPixels++;
+                            }
+                        }
+                    }
+                },
+                
+                // Keyboard shortcuts
+                setupKeyboardShortcuts() {
+                    document.addEventListener('keydown', (e) => {
+                        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+                        
+                        switch (e.key.toLowerCase()) {
+                            case 'b':
+                            case 'p':
+                                e.preventDefault();
+                                this.setTool('paint');
+                                break;
+                            case 'e':
+                                e.preventDefault();
+                                this.setTool('erase');
+                                break;
+                            case 'f':
+                                e.preventDefault();
+                                this.setTool('fill');
+                                break;
+                            case 'c':
+                                if (e.ctrlKey || e.metaKey) {
+                                    e.preventDefault();
+                                    this.clearCanvas();
+                                }
+                                break;
+                            case 'z':
+                                if (e.ctrlKey || e.metaKey) {
+                                    e.preventDefault();
+                                    this.undoLastAction();
+                                }
+                                break;
+                            case 'm':
+                                e.preventDefault();
+                                this.mirrorMode = !this.mirrorMode;
+                                break;
+                            case 'g':
+                                e.preventDefault();
+                                this.showGrid = !this.showGrid;
+                                this.renderCanvas();
+                                break;
+                        }
+                    });
+                },
+                
+                // Setup resize listener for responsive canvas
+                setupResizeListener() {
+                    window.addEventListener('resize', () => {
+                        // Debounce resize events
+                        clearTimeout(this.resizeTimeout);
+                        this.resizeTimeout = setTimeout(() => {
+                            this.renderCanvas();
+                        }, 250);
+                    });
+                },
+                
+                // Settings
+                resetSettings() {
+                    this.gridSize = 16;
+                    this.pixelSize = 16;
+                    this.mirrorMode = false;
+                    this.showGrid = true;
+                    this.showCoordinates = false;
+                    this.autoSave = true;
+                    this.challengeDuration = 300;
+                    this.exportScale = 4;
+                    this.transparentBackground = false;
+                    this.createCanvas();
+                    this.showToastMessage('Settings reset to default!', 'success');
+                },
+                
+                // UI helpers
+                showToastMessage(message, type = 'success') {
+                    this.toastMessage = message;
+                    this.toastType = type;
+                    this.showToast = true;
+                    setTimeout(() => {
+                        this.showToast = false;
+                    }, 3000);
+                },
+                
+                // Watchers
+                $watch: {
+                    gridSize() {
+                        this.createCanvas();
+                    },
+                    showExportModal(value) {
+                        if (value) {
+                            // Ensure canvas is rendered before showing preview
+                            this.renderCanvas();
+                            // Give extra time for DOM to be ready and canvas to render
+                            setTimeout(() => {
+                                this.updatePreview();
+                            }, 300);
+                        }
+                    },
+                    pixelSize() {
+                        this.renderCanvas();
+                    },
+                    showGrid() {
+                        this.renderCanvas();
+                    },
+                    currentColor() {
+                        if (this.currentTool === 'paint') {
+                            this.usedColors[this.currentColor] = true;
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
