@@ -48,6 +48,7 @@ This project is a showcase of multiple mini-tools and utilities built within the
 | 📷 **Image Filter Studio** | Apply filters and effects to uploaded images | ✅ Complete | Canvas API & Image Processing |
 | 🎵 **Music Player** | Simple audio player with playlist support | ✅ Complete | Web Audio API & Media Controls |
 | 📊 **Data Visualizer** | Transform data into interactive charts and graphs | ✅ Complete | Chart.js & Data Processing |
+| ⌨️ **Typing Speed Tester** | Test and improve typing speed with real-time analytics | ✅ Complete | Performance Metrics & Real-time Feedback |
 
 ### 🎯 Tool Features
 
@@ -114,6 +115,18 @@ This project is a showcase of multiple mini-tools and utilities built within the
 - **Chart Customization**: Toggle legend, grid, animation, and responsiveness
 - **Advanced Filtering**: Column-specific filters with dropdown suggestions
 - **Data Management**: Pagination for large datasets and data validation
+
+#### ⌨️ Typing Speed Tester
+- **Real-time Analytics**: Live WPM calculation, accuracy tracking, and character statistics
+- **Multiple Difficulty Levels**: Easy, Medium, Hard, and Programming challenges
+- **Flexible Test Durations**: 30 seconds to 5 minutes with visual progress indicator
+- **Performance Metrics**: Comprehensive analysis including words per minute, accuracy percentage, and error tracking
+- **Test History**: Save and review past performance with local storage
+- **Visual Feedback**: Color-coded character highlighting for immediate typing feedback
+- **Customizable Settings**: Personalize test parameters, auto-restart, and display preferences
+- **Mobile Optimized**: Touch-friendly interface with responsive design
+- **Result Sharing**: Share achievements via native sharing or clipboard copy
+- **Keyboard Shortcuts**: Quick access to test controls and navigation
 
 ## 🚀 Quick Start
 

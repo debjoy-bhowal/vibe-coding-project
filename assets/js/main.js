@@ -3,7 +3,7 @@ function hubApp() {
     return {
         searchTerm: '',
         filterStatus: 'all',
-        completedTools: 10,
+        completedTools: 11,
         
         // Sample tools data - will be updated as real tools are built
         tools: [
@@ -106,6 +106,16 @@ function hubApp() {
                 statusLabel: 'Complete',
                 technologies: ['Notifications', 'Audio', 'Sessions'],
                 url: './tools/pomodoro-timer/'
+            },
+            {
+                id: 'typing-speed-tester',
+                name: 'Typing Speed Tester',
+                description: 'Test and improve your typing speed with real-time feedback',
+                icon: '⌨️',
+                status: 'complete',
+                statusLabel: 'Complete',
+                technologies: ['Real-time Stats', 'Performance Analytics', 'Local Storage'],
+                url: './tools/typing-speed-tester/'
             }
         ],
 

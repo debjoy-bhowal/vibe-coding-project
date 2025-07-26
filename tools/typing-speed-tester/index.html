@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typing Speed Tester - Vibe Tools</title>
+    <meta name="description" content="Test and improve your typing speed with real-time WPM calculation and accuracy tracking">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- DaisyUI -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@3.9.4/dist/full.css" rel="stylesheet" type="text/css" />
+    
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#8B5CF6',
+                        secondary: '#06B6D4',
+                        accent: '#F59E0B',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .typing-text {
+            font-family: 'Courier New', monospace;
+            line-height: 1.8;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        
+        .char-correct {
+            background-color: #10b981;
+            color: white;
+        }
+        
+        .char-incorrect {
+            background-color: #ef4444;
+            color: white;
+        }
+        
+        .char-current {
+            position: relative;
+            border-left: 2px solid #3b82f6;
+            animation: simpleCursor 1.2s infinite;
+        }
+        
+        .char-pending {
+            color: #374151;
+            font-weight: 500;
+        }
+        
+        @keyframes simpleCursor {
+            0%, 70% { border-left-color: #3b82f6; }
+            71%, 100% { border-left-color: transparent; }
+        }
+        
+        .stats-card {
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.95);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        
+        .stats-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+            background: rgba(255, 255, 255, 1);
+        }
+        
+        .progress-ring {
+            transform: rotate(-90deg);
+        }
+        
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.35s;
+            transform-origin: 50% 50%;
+        }
+        
+        .keyboard-hint {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        @media (max-width: 768px) {
+            .typing-text {
+                font-size: 1rem;
+                line-height: 1.6;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen gradient-bg" x-data="typingSpeedApp()">
+    
+    <!-- Header -->
+    <header class="bg-white/90 backdrop-blur-md shadow-lg sticky top-0 z-50 border-b border-white/20">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="btn btn-ghost btn-sm">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        <span class="hidden md:inline">Back to Hub</span>
+                    </a>
+                    <div class="flex items-center space-x-2">
+                        <div class="text-2xl md:text-3xl">⌨️</div>
+                        <div>
+                            <h1 class="text-lg md:text-2xl font-bold text-gray-800">
+                                Typing Speed Tester
+                            </h1>
+                            <p class="text-xs md:text-sm text-gray-600 hidden sm:block">Test and improve your typing speed with real-time feedback</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button @click="resetTest()" class="btn btn-outline btn-sm" :disabled="!hasStarted">
+                        <i class="fas fa-redo"></i>
+                        <span class="hidden sm:inline">Reset</span>
+                    </button>
+                    <button @click="showSettings = true" class="btn btn-ghost btn-sm">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        
+        <!-- Stats Dashboard -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <!-- WPM -->
+            <div class="stats-card glass-effect rounded-xl p-6 text-center">
+                <div class="stat">
+                    <div class="stat-figure text-primary">
+                        <i class="fas fa-tachometer-alt text-2xl"></i>
+                    </div>
+                    <div class="stat-title">WPM</div>
+                    <div class="stat-value text-primary" x-text="Math.round(wpm)"></div>
+                    <div class="stat-desc">Words per minute</div>
+                </div>
+            </div>
+            
+            <!-- Accuracy -->
+            <div class="stats-card glass-effect rounded-xl p-6 text-center">
+                <div class="stat">
+                    <div class="stat-figure text-success">
+                        <i class="fas fa-bullseye text-2xl"></i>
+                    </div>
+                    <div class="stat-title">Accuracy</div>
+                    <div class="stat-value text-success" x-text="Math.round(accuracy) + '%'"></div>
+                    <div class="stat-desc">Correct characters</div>
+                </div>
+            </div>
+            
+            <!-- Time -->
+            <div class="stats-card glass-effect rounded-xl p-6 text-center">
+                <div class="stat">
+                    <div class="stat-figure text-warning">
+                        <i class="fas fa-clock text-2xl"></i>
+                    </div>
+                    <div class="stat-title">Time</div>
+                    <div class="stat-value text-warning" x-text="formatTime(timeElapsed)"></div>
+                    <div class="stat-desc" x-text="'Target: ' + testDuration + 's'"></div>
+                </div>
+            </div>
+            
+            <!-- Characters -->
+            <div class="stats-card glass-effect rounded-xl p-6 text-center">
+                <div class="stat">
+                    <div class="stat-figure text-info">
+                        <i class="fas fa-keyboard text-2xl"></i>
+                    </div>
+                    <div class="stat-title">Characters</div>
+                    <div class="stat-value text-info" x-text="correctChars + '/' + totalChars"></div>
+                    <div class="stat-desc">Typed / Total</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Typing Test Area -->
+        <div class="glass-effect rounded-xl p-6 shadow-lg mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-semibold flex items-center gap-2">
+                    <i class="fas fa-edit text-primary"></i>
+                    Typing Test
+                </h2>
+                <div class="flex items-center gap-4">
+                    <!-- Progress Ring -->
+                    <div class="relative w-16 h-16" x-show="testActive">
+                        <svg class="progress-ring w-16 h-16" viewBox="0 0 120 120">
+                            <circle class="progress-ring-circle stroke-gray-200" 
+                                    stroke-width="8" fill="transparent" r="52" cx="60" cy="60"/>
+                            <circle class="progress-ring-circle stroke-primary" 
+                                    stroke-width="8" fill="transparent" r="52" cx="60" cy="60"
+                                    :stroke-dasharray="circumference"
+                                    :stroke-dashoffset="circumference - (timeElapsed / testDuration) * circumference"/>
+                        </svg>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span class="text-sm font-bold" x-text="testDuration - timeElapsed"></span>
+                        </div>
+                    </div>
+                    
+                    <!-- Test Status -->
+                    <div class="badge" 
+                         :class="{
+                             'badge-success': testCompleted,
+                             'badge-primary': testActive,
+                             'badge-ghost': !testActive && !testCompleted
+                         }">
+                        <span x-show="!testActive && !testCompleted">Ready</span>
+                        <span x-show="testActive">Active</span>
+                        <span x-show="testCompleted">Completed</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Text Display -->
+            <div class="bg-white rounded-lg p-6 mb-4 min-h-[200px] border-2 border-gray-200 focus-within:border-primary transition-colors">
+                <div class="typing-text select-none" id="textDisplay">
+                    <template x-for="(char, index) in textToType.split('')" :key="index">
+                        <span :class="{
+                            'char-correct': index < currentIndex && typedChars[index] === char,
+                            'char-incorrect': index < currentIndex && typedChars[index] !== char,
+                            'char-current': index === currentIndex,
+                            'char-pending': index > currentIndex
+                        }" x-text="char"></span>
+                    </template>
+                </div>
+            </div>
+            
+            <!-- Input Area -->
+            <div class="space-y-4">
+                <textarea x-ref="typingInput"
+                         x-model="userInput"
+                         @input="handleInput($event)"
+                         @keydown="handleKeyDown($event)"
+                         :disabled="testCompleted"
+                         placeholder="Start typing here to begin the test..."
+                         class="textarea textarea-bordered w-full h-32 text-lg font-mono resize-none"
+                         :class="testActive ? 'textarea-primary' : ''"
+                         autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+                
+                <div class="flex flex-col sm:flex-row gap-4 justify-between items-center">
+                    <div class="flex flex-wrap gap-2">
+                        <button @click="startTest()" 
+                                :disabled="testActive || testCompleted"
+                                class="btn btn-primary">
+                            <i class="fas fa-play mr-2"></i>
+                            Start Test
+                        </button>
+                        <button @click="resetTest()" 
+                                :disabled="!hasStarted"
+                                class="btn btn-outline">
+                            <i class="fas fa-redo mr-2"></i>
+                            Reset
+                        </button>
+                        <button @click="generateNewText()" 
+                                :disabled="testActive"
+                                class="btn btn-ghost">
+                            <i class="fas fa-random mr-2"></i>
+                            New Text
+                        </button>
+                    </div>
+                    
+                    <div class="text-sm text-gray-600">
+                        Difficulty: <span class="font-semibold" x-text="currentDifficulty"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div x-show="testCompleted" x-transition class="glass-effect rounded-xl p-6 shadow-lg mb-8">
+            <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                <i class="fas fa-trophy text-yellow-500"></i>
+                Test Results
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white rounded-lg p-4 text-center shadow-md border border-gray-100">
+                    <div class="text-2xl font-bold text-primary" x-text="Math.round(finalWpm)"></div>
+                    <div class="text-sm text-gray-600">Final WPM</div>
+                </div>
+                <div class="bg-white rounded-lg p-4 text-center shadow-md border border-gray-100">
+                    <div class="text-2xl font-bold text-success" x-text="Math.round(finalAccuracy) + '%'"></div>
+                    <div class="text-sm text-gray-600">Final Accuracy</div>
+                </div>
+                <div class="bg-white rounded-lg p-4 text-center shadow-md border border-gray-100">
+                    <div class="text-2xl font-bold text-info" x-text="correctWords"></div>
+                    <div class="text-sm text-gray-600">Correct Words</div>
+                </div>
+                <div class="bg-white rounded-lg p-4 text-center shadow-md border border-gray-100">
+                    <div class="text-2xl font-bold text-warning" x-text="permanentErrors"></div>
+                    <div class="text-sm text-gray-600">Total Errors</div>
+                </div>
+            </div>
+            
+            <div class="flex flex-wrap gap-4 justify-center">
+                <button @click="saveResult()" class="btn btn-success">
+                    <i class="fas fa-save mr-2"></i>
+                    Save Result
+                </button>
+                <button @click="shareResult()" class="btn btn-info">
+                    <i class="fas fa-share mr-2"></i>
+                    Share Result
+                </button>
+                <button @click="resetTest()" class="btn btn-primary">
+                    <i class="fas fa-play mr-2"></i>
+                    Try Again
+                </button>
+            </div>
+        </div>
+
+        <!-- History Section -->
+        <div x-show="testHistory.length > 0" class="glass-effect rounded-xl p-6 shadow-lg">
+            <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                <i class="fas fa-history text-primary"></i>
+                Test History
+                <button @click="clearHistory()" class="btn btn-ghost btn-xs ml-auto">
+                    <i class="fas fa-trash"></i>
+                    Clear
+                </button>
+            </h2>
+            
+            <div class="overflow-x-auto">
+                <table class="table table-zebra w-full">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>WPM</th>
+                            <th>Accuracy</th>
+                            <th>Duration</th>
+                            <th>Difficulty</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="(result, index) in testHistory.slice().reverse()" :key="index">
+                            <tr>
+                                <td x-text="new Date(result.date).toLocaleDateString()"></td>
+                                <td><span class="badge badge-primary" x-text="result.wpm"></span></td>
+                                <td><span class="badge badge-success" x-text="result.accuracy + '%'"></span></td>
+                                <td x-text="result.duration + 's'"></td>
+                                <td><span class="badge badge-outline" x-text="result.difficulty"></span></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Settings Modal -->
+    <div x-show="showSettings" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+         @click.self="showSettings = false">
+        
+        <div class="bg-white rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold">Settings</h2>
+                    <button @click="showSettings = false" class="btn btn-ghost btn-sm">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="space-y-6">
+                    <div>
+                        <label class="label">
+                            <span class="label-text font-semibold">Test Duration</span>
+                        </label>
+                        <select x-model="testDuration" class="select select-bordered w-full" :disabled="testActive">
+                            <option value="30">30 seconds</option>
+                            <option value="60">1 minute</option>
+                            <option value="120">2 minutes</option>
+                            <option value="300">5 minutes</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="label">
+                            <span class="label-text font-semibold">Difficulty Level</span>
+                        </label>
+                        <select x-model="difficultyLevel" @change="generateNewText()" class="select select-bordered w-full" :disabled="testActive">
+                            <option value="easy">Easy - Common words</option>
+                            <option value="medium">Medium - Mixed content</option>
+                            <option value="hard">Hard - Complex sentences</option>
+                            <option value="programming">Programming - Code snippets</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-control">
+                        <label class="label cursor-pointer">
+                            <span class="label-text">Show live WPM</span>
+                            <input type="checkbox" x-model="showLiveWpm" class="toggle toggle-primary">
+                        </label>
+                    </div>
+                    
+                    <div class="form-control">
+                        <label class="label cursor-pointer">
+                            <span class="label-text">Sound effects</span>
+                            <input type="checkbox" x-model="soundEnabled" class="toggle toggle-primary">
+                        </label>
+                    </div>
+                    
+                    <div class="form-control">
+                        <label class="label cursor-pointer">
+                            <span class="label-text">Auto-restart on completion</span>
+                            <input type="checkbox" x-model="autoRestart" class="toggle toggle-primary">
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="flex gap-4 mt-8">
+                    <button @click="showSettings = false" class="btn btn-outline flex-1">Close</button>
+                    <button @click="resetSettings()" class="btn btn-ghost">Reset to Default</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Keyboard Hint (Mobile) -->
+    <div x-show="testActive && window.innerWidth < 768" 
+         class="keyboard-hint">
+        <button @click="focusInput()" class="btn btn-primary btn-sm">
+            <i class="fas fa-keyboard"></i>
+            Focus
+        </button>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast toast-top toast-end z-[60]" x-show="showToast" x-transition>
+        <div class="alert" :class="toastType === 'success' ? 'alert-success' : 'alert-error'">
+            <i :class="toastType === 'success' ? 'fas fa-check' : 'fas fa-exclamation-triangle'"></i>
+            <span x-text="toastMessage"></span>
+        </div>
+    </div>
+
+    <script src="../../assets/js/utils.js"></script>
+    <script>
+        function typingSpeedApp() {
+            return {
+                // Test state
+                textToType: '',
+                userInput: '',
+                currentIndex: 0,
+                typedChars: [],
+                testActive: false,
+                testCompleted: false,
+                hasStarted: false,
+                
+                // Timer
+                startTime: null,
+                timeElapsed: 0,
+                testDuration: 60,
+                timerInterval: null,
+                circumference: 2 * Math.PI * 52,
+                
+                // Stats
+                wpm: 0,
+                accuracy: 100,
+                correctChars: 0,
+                totalChars: 0,
+                correctWords: 0,
+                totalErrors: 0,
+                permanentErrors: 0, // Track errors permanently, never reset by backspace
+                totalKeysPressed: 0, // Track total keys for accurate error percentage
+                previousInputLength: 0, // Track previous input length to detect new keystrokes
+                finalWpm: 0,
+                finalAccuracy: 100,
+                
+                // Settings
+                difficultyLevel: 'medium',
+                showLiveWpm: true,
+                soundEnabled: true,
+                autoRestart: false,
+                showSettings: false,
+                
+                // History
+                testHistory: [],
+                
+                // UI
+                showToast: false,
+                toastMessage: '',
+                toastType: 'success',
+                
+                // Text samples by difficulty
+                textSamples: {
+                    easy: [
+                        "The quick brown fox jumps over the lazy dog near the old oak tree in the forest during a beautiful sunny day.",
+                        "She sells seashells by the seashore while children play in the sand and waves crash on the beach.",
+                        "A cat sat on a mat and watched the birds fly around the garden with flowers blooming everywhere.",
+                        "The sun rises in the east and sets in the west painting the sky with beautiful colors every day.",
+                    ],
+                    medium: [
+                        "Technology has revolutionized the way we communicate, work, and live our daily lives in the modern world. From smartphones to artificial intelligence, innovation continues to shape our future.",
+                        "Climate change represents one of the most significant challenges facing humanity today. Scientists worldwide are working together to develop sustainable solutions for environmental protection.",
+                        "The advancement of medicine has dramatically increased human life expectancy over the past century. New treatments and diagnostic tools continue to improve healthcare outcomes globally.",
+                        "Education plays a crucial role in personal development and societal progress. Online learning platforms have made knowledge more accessible than ever before in human history.",
+                    ],
+                    hard: [
+                        "Quantum mechanics, despite its counterintuitive nature, provides the most accurate description of atomic and subatomic phenomena. The uncertainty principle fundamentally challenges our classical understanding of reality.",
+                        "Philosophical discourse regarding consciousness and free will has persisted throughout millennia, encompassing diverse perspectives from deterministic materialism to dualistic interpretations of mind-body relationships.",
+                        "Macroeconomic policies implemented during financial crises often involve complex trade-offs between inflation control, unemployment reduction, and fiscal sustainability within global market dynamics.",
+                        "Neuroplasticity research demonstrates the brain's remarkable capacity for adaptation and reorganization, challenging previously held beliefs about cognitive development and rehabilitation potential.",
+                    ],
+                    programming: [
+                        "function calculateSum(array) { return array.reduce((acc, curr) => acc + curr, 0); } const numbers = [1, 2, 3, 4, 5]; console.log(calculateSum(numbers));",
+                        "class DataProcessor { constructor(data) { this.data = data; } filter(condition) { return this.data.filter(condition); } map(transform) { return this.data.map(transform); } }",
+                        "const fetchUserData = async (userId) => { try { const response = await fetch(`/api/users/${userId}`); return await response.json(); } catch (error) { console.error(error); } }",
+                        "import React, { useState, useEffect } from 'react'; const Component = () => { const [state, setState] = useState(null); useEffect(() => { setState('mounted'); }, []); return <div>{state}</div>; };",
+                    ]
+                },
+                
+                // Word pools for random sentence generation
+                wordPools: {
+                    easy: {
+                        articles: ['the', 'a', 'an'],
+                        adjectives: ['quick', 'brown', 'lazy', 'beautiful', 'old', 'new', 'big', 'small', 'happy', 'sad', 'fast', 'slow', 'bright', 'dark', 'hot', 'cold', 'good', 'bad', 'tall', 'short', 'clean', 'dirty', 'fresh', 'sweet', 'loud', 'quiet'],
+                        nouns: ['cat', 'dog', 'house', 'tree', 'car', 'book', 'table', 'chair', 'window', 'door', 'garden', 'flower', 'bird', 'fish', 'sun', 'moon', 'star', 'water', 'fire', 'mountain', 'river', 'ocean', 'forest', 'beach', 'city', 'town', 'school', 'park', 'bridge', 'road'],
+                        verbs: ['runs', 'jumps', 'walks', 'sits', 'stands', 'flies', 'swims', 'reads', 'writes', 'plays', 'works', 'sleeps', 'eats', 'drinks', 'laughs', 'cries', 'sings', 'dances', 'drives', 'builds', 'grows', 'shines', 'flows', 'moves', 'stops', 'starts'],
+                        prepositions: ['in', 'on', 'at', 'by', 'near', 'under', 'over', 'through', 'around', 'beside', 'behind', 'before', 'after', 'during', 'with', 'without', 'for', 'against', 'about', 'across', 'along', 'among', 'between', 'into', 'onto', 'upon']
+                    },
+                    medium: {
+                        adjectives: ['revolutionary', 'magnificent', 'extraordinary', 'incredible', 'outstanding', 'remarkable', 'fascinating', 'mysterious', 'dangerous', 'powerful', 'creative', 'innovative', 'traditional', 'modern', 'ancient', 'complex', 'simple', 'effective', 'efficient', 'successful', 'challenging', 'exciting', 'interesting', 'important', 'necessary', 'possible'],
+                        nouns: ['technology', 'innovation', 'discovery', 'research', 'development', 'experiment', 'analysis', 'solution', 'problem', 'challenge', 'opportunity', 'achievement', 'progress', 'improvement', 'advancement', 'knowledge', 'wisdom', 'experience', 'education', 'learning', 'understanding', 'communication', 'information', 'data', 'system', 'process'],
+                        verbs: ['revolutionizes', 'transforms', 'creates', 'develops', 'discovers', 'analyzes', 'investigates', 'explores', 'examines', 'demonstrates', 'proves', 'establishes', 'determines', 'influences', 'affects', 'improves', 'enhances', 'facilitates', 'enables', 'promotes', 'encourages', 'supports', 'maintains', 'generates', 'produces', 'achieves'],
+                        adverbs: ['significantly', 'dramatically', 'substantially', 'considerably', 'effectively', 'efficiently', 'successfully', 'carefully', 'thoroughly', 'completely', 'partially', 'gradually', 'immediately', 'eventually', 'frequently', 'occasionally', 'continuously', 'constantly', 'regularly', 'systematically', 'methodically', 'precisely', 'accurately', 'properly', 'clearly', 'obviously']
+                    },
+                    hard: {
+                        adjectives: ['sophisticated', 'comprehensive', 'fundamental', 'theoretical', 'practical', 'philosophical', 'psychological', 'technological', 'scientific', 'mathematical', 'statistical', 'analytical', 'systematic', 'methodical', 'empirical', 'experimental', 'observational', 'conceptual', 'intellectual', 'rational', 'logical', 'strategic', 'tactical', 'diplomatic', 'controversial', 'ambiguous'],
+                        nouns: ['phenomenon', 'hypothesis', 'methodology', 'paradigm', 'framework', 'perspective', 'interpretation', 'implementation', 'manifestation', 'correlation', 'causation', 'implication', 'consequence', 'significance', 'relevance', 'coherence', 'consistency', 'complexity', 'uncertainty', 'probability', 'possibility', 'capability', 'functionality', 'compatibility', 'sustainability', 'reliability'],
+                        verbs: ['demonstrates', 'illustrates', 'exemplifies', 'substantiates', 'corroborates', 'validates', 'authenticates', 'verifies', 'confirms', 'establishes', 'postulates', 'hypothesizes', 'theorizes', 'conceptualizes', 'synthesizes', 'categorizes', 'classifies', 'differentiates', 'distinguishes', 'characterizes', 'represents', 'symbolizes', 'encompasses', 'incorporates', 'integrates', 'consolidates'],
+                        adverbs: ['fundamentally', 'theoretically', 'practically', 'systematically', 'methodically', 'analytically', 'empirically', 'statistically', 'mathematically', 'logically', 'rationally', 'strategically', 'tactically', 'diplomatically', 'philosophically', 'psychologically', 'technologically', 'scientifically', 'comprehensively', 'extensively', 'intensively', 'exclusively', 'inclusively', 'respectively', 'consequently', 'subsequently']
+                    },
+                    programming: {
+                        keywords: ['function', 'class', 'const', 'let', 'var', 'return', 'if', 'else', 'for', 'while', 'try', 'catch', 'async', 'await', 'import', 'export', 'default', 'new', 'this', 'super', 'extends', 'implements', 'interface', 'type', 'enum', 'public', 'private', 'protected'],
+                        methods: ['push', 'pop', 'shift', 'unshift', 'slice', 'splice', 'map', 'filter', 'reduce', 'find', 'findIndex', 'forEach', 'some', 'every', 'includes', 'indexOf', 'join', 'split', 'replace', 'substring', 'charAt', 'toLowerCase', 'toUpperCase', 'trim', 'parseInt', 'parseFloat'],
+                        objects: ['array', 'object', 'string', 'number', 'boolean', 'undefined', 'null', 'console', 'window', 'document', 'element', 'event', 'promise', 'callback', 'closure', 'prototype', 'constructor', 'instance', 'property', 'method', 'parameter', 'argument', 'variable', 'constant', 'expression', 'statement'],
+                        operators: ['===', '!==', '==', '!=', '>', '<', '>=', '<=', '&&', '||', '!', '+', '-', '*', '/', '%', '++', '--', '+=', '-=', '*=', '/=', '=>', '...', '?.', '??', '||=', '&&=']
+                    }
+                },
+                
+                // Computed properties
+                get currentDifficulty() {
+                    const labels = {
+                        easy: 'Easy',
+                        medium: 'Medium', 
+                        hard: 'Hard',
+                        programming: 'Programming'
+                    };
+                    return labels[this.difficultyLevel] || 'Medium';
+                },
+                
+                // Initialize
+                init() {
+                    this.loadSettings();
+                    this.loadHistory();
+                    this.generateNewText();
+                    
+                    // Keyboard shortcuts
+                    document.addEventListener('keydown', (e) => {
+                        if (e.ctrlKey || e.metaKey) {
+                            if (e.key === 'r') {
+                                e.preventDefault();
+                                this.resetTest();
+                            } else if (e.key === 'n') {
+                                e.preventDefault();
+                                this.generateNewText();
+                            }
+                        }
+                        if (e.key === 'Escape') {
+                            this.showSettings = false;
+                        }
+                    });
+                },
+                
+                // Text generation
+                generateNewText() {
+                    if (this.testActive) return;
+                    
+                    // 50% chance to use predefined samples, 50% chance to generate random text
+                    if (Math.random() < 0.5 && this.textSamples[this.difficultyLevel]) {
+                        const samples = this.textSamples[this.difficultyLevel];
+                        const randomIndex = Math.floor(Math.random() * samples.length);
+                        this.textToType = samples[randomIndex];
+                    } else {
+                        this.textToType = this.generateRandomText();
+                    }
+                    this.resetTest();
+                },
+                
+                // Generate random text based on difficulty
+                generateRandomText() {
+                    if (this.difficultyLevel === 'programming') {
+                        return this.generateRandomCode();
+                    } else {
+                        return this.generateRandomSentences();
+                    }
+                },
+                
+                // Generate random sentences with proper structure
+                generateRandomSentences() {
+                    const pool = this.wordPools[this.difficultyLevel];
+                    if (!pool) return this.textSamples[this.difficultyLevel][0];
+                    
+                    const sentences = [];
+                    const numSentences = this.difficultyLevel === 'easy' ? 2 + Math.floor(Math.random() * 2) : 3 + Math.floor(Math.random() * 3);
+                    
+                    for (let i = 0; i < numSentences; i++) {
+                        sentences.push(this.generateRandomSentence(pool));
+                    }
+                    
+                    return sentences.join(' ');
+                },
+                
+                // Generate a single random sentence
+                generateRandomSentence(pool) {
+                    const structures = [
+                        () => this.buildSentence(pool, ['articles', 'adjectives', 'nouns', 'verbs', 'prepositions', 'articles', 'adjectives', 'nouns']),
+                        () => this.buildSentence(pool, ['articles', 'nouns', 'verbs', 'adverbs', 'prepositions', 'articles', 'nouns']),
+                        () => this.buildSentence(pool, ['adjectives', 'nouns', 'verbs', 'prepositions', 'articles', 'adjectives', 'nouns']),
+                        () => this.buildSentence(pool, ['articles', 'adjectives', 'nouns', 'verbs', 'articles', 'adjectives', 'nouns', 'adverbs']),
+                        () => this.buildSentence(pool, ['prepositions', 'articles', 'nouns', 'articles', 'adjectives', 'nouns', 'verbs'])
+                    ];
+                    
+                    const randomStructure = structures[Math.floor(Math.random() * structures.length)];
+                    let sentence = randomStructure();
+                    
+                    // Capitalize first letter
+                    sentence = sentence.charAt(0).toUpperCase() + sentence.slice(1);
+                    
+                    // Add punctuation
+                    const punctuation = ['.', '.', '.', '!', '?'][Math.floor(Math.random() * 5)];
+                    return sentence + punctuation;
+                },
+                
+                // Build sentence from structure
+                buildSentence(pool, structure) {
+                    const words = [];
+                    
+                    for (const wordType of structure) {
+                        const wordArray = pool[wordType] || pool.nouns;
+                        const randomWord = wordArray[Math.floor(Math.random() * wordArray.length)];
+                        words.push(randomWord);
+                    }
+                    
+                    return words.join(' ');
+                },
+                
+                // Generate random programming code
+                generateRandomCode() {
+                    const pool = this.wordPools.programming;
+                    const codeStructures = [
+                        () => `${this.randomFromArray(pool.keywords)} ${this.randomFromArray(pool.objects)}${Math.floor(Math.random() * 100)} = ${this.randomFromArray(pool.methods)}(${this.randomFromArray(pool.objects)});`,
+                        () => `if (${this.randomFromArray(pool.objects)} ${this.randomFromArray(pool.operators)} ${Math.floor(Math.random() * 10)}) { return ${this.randomFromArray(pool.methods)}(); }`,
+                        () => `const ${this.randomFromArray(pool.objects)}${Math.floor(Math.random() * 10)} = ${this.randomFromArray(pool.objects)}.${this.randomFromArray(pool.methods)}(${this.randomFromArray(pool.objects)} ${this.randomFromArray(pool.operators)} value);`,
+                        () => `${this.randomFromArray(pool.keywords)} ${this.randomFromArray(pool.objects)}${Math.floor(Math.random() * 10)} { ${this.randomFromArray(pool.keywords)}(${this.randomFromArray(pool.objects)}) { this.${this.randomFromArray(pool.objects)} = ${this.randomFromArray(pool.objects)}; } }`,
+                        () => `try { const ${this.randomFromArray(pool.objects)} = await ${this.randomFromArray(pool.methods)}(${this.randomFromArray(pool.objects)}); } catch (${this.randomFromArray(pool.objects)}) { console.log(${this.randomFromArray(pool.objects)}); }`,
+                        () => `${this.randomFromArray(pool.objects)}.${this.randomFromArray(pool.methods)}(${this.randomFromArray(pool.objects)} ${this.randomFromArray(pool.operators)} { return ${this.randomFromArray(pool.objects)}.${this.randomFromArray(pool.methods)}(); });`
+                    ];
+                    
+                    const numStatements = 2 + Math.floor(Math.random() * 3);
+                    const statements = [];
+                    
+                    for (let i = 0; i < numStatements; i++) {
+                        const randomStructure = codeStructures[Math.floor(Math.random() * codeStructures.length)];
+                        statements.push(randomStructure());
+                    }
+                    
+                    return statements.join(' ');
+                },
+                
+                // Helper method to get random item from array
+                randomFromArray(array) {
+                    return array[Math.floor(Math.random() * array.length)];
+                },
+                
+                // Test control
+                startTest() {
+                    if (this.testActive) return;
+                    
+                    this.testActive = true;
+                    this.hasStarted = true;
+                    this.testCompleted = false;
+                    this.startTime = Date.now();
+                    this.timeElapsed = 0;
+                    
+                    this.focusInput();
+                    this.startTimer();
+                    this.showToastMessage('Test started! Start typing...', 'success');
+                },
+                
+                resetTest() {
+                    this.testActive = false;
+                    this.testCompleted = false;
+                    this.hasStarted = false;
+                    this.userInput = '';
+                    this.currentIndex = 0;
+                    this.typedChars = [];
+                    this.timeElapsed = 0;
+                    this.wpm = 0;
+                    this.accuracy = 100;
+                    this.correctChars = 0;
+                    this.totalChars = 0;
+                    this.correctWords = 0;
+                    this.totalErrors = 0;
+                    this.permanentErrors = 0;
+                    this.totalKeysPressed = 0;
+                    this.previousInputLength = 0;
+                    
+                    if (this.timerInterval) {
+                        clearInterval(this.timerInterval);
+                        this.timerInterval = null;
+                    }
+                },
+                
+                // Timer management
+                startTimer() {
+                    this.timerInterval = setInterval(() => {
+                        this.timeElapsed++;
+                        this.updateStats();
+                        
+                        if (this.timeElapsed >= this.testDuration) {
+                            this.completeTest();
+                        }
+                    }, 1000);
+                },
+                
+                completeTest() {
+                    this.testActive = false;
+                    this.testCompleted = true;
+                    
+                    if (this.timerInterval) {
+                        clearInterval(this.timerInterval);
+                        this.timerInterval = null;
+                    }
+                    
+                    this.finalWpm = this.wpm;
+                    this.finalAccuracy = this.accuracy;
+                    
+                    this.showToastMessage('Test completed!', 'success');
+                    
+                    if (this.autoRestart) {
+                        setTimeout(() => this.resetTest(), 3000);
+                    }
+                },
+                
+                // Input handling
+                handleInput(event) {
+                    if (!this.testActive && !this.hasStarted) {
+                        this.startTest();
+                    }
+                    
+                    if (!this.testActive) return;
+                    
+                    const inputValue = event.target.value;
+                    const newTypedChars = inputValue.split('');
+                    const newInputLength = newTypedChars.length;
+                    
+                    // Detect if this is a new keystroke (not a backspace)
+                    if (newInputLength > this.previousInputLength) {
+                        // New character was typed
+                        this.totalKeysPressed++;
+                        const newCharIndex = newInputLength - 1;
+                        
+                        // Check if the new character is incorrect
+                        if (newCharIndex < this.textToType.length && 
+                            newTypedChars[newCharIndex] !== this.textToType[newCharIndex]) {
+                            this.permanentErrors++;
+                        }
+                    }
+                    
+                    this.typedChars = newTypedChars;
+                    this.previousInputLength = newInputLength;
+                    this.currentIndex = Math.min(this.typedChars.length, this.textToType.length);
+                    
+                    this.updateStats();
+                    
+                    // Check if test is complete by text completion
+                    if (this.currentIndex >= this.textToType.length) {
+                        this.completeTest();
+                    }
+                },
+                
+                handleKeyDown(event) {
+                    if (event.key === 'Tab') {
+                        event.preventDefault();
+                    }
+                },
+                
+                // Statistics calculation
+                updateStats() {
+                    this.totalChars = this.currentIndex;
+                    this.correctChars = 0;
+                    this.totalErrors = 0;
+                    
+                    // Calculate correct characters and current errors (for current display)
+                    for (let i = 0; i < this.currentIndex; i++) {
+                        if (this.typedChars[i] === this.textToType[i]) {
+                            this.correctChars++;
+                        } else {
+                            this.totalErrors++;
+                        }
+                    }
+                    
+                    // Calculate accuracy based on permanent errors vs total keys pressed
+                    // This ensures backspacing doesn't "fix" the error percentage
+                    if (this.totalKeysPressed > 0) {
+                        const correctKeysPressed = this.totalKeysPressed - this.permanentErrors;
+                        this.accuracy = (correctKeysPressed / this.totalKeysPressed) * 100;
+                    } else {
+                        this.accuracy = 100;
+                    }
+                    
+                    // Calculate WPM (words per minute)
+                    if (this.timeElapsed > 0) {
+                        const minutes = this.timeElapsed / 60;
+                        const wordsTyped = this.correctChars / 5; // Standard: 5 characters = 1 word
+                        this.wpm = wordsTyped / minutes;
+                    }
+                    
+                    // Calculate correct words
+                    const typedText = this.typedChars.join('').substring(0, this.currentIndex);
+                    const words = typedText.split(' ');
+                    const targetWords = this.textToType.substring(0, this.currentIndex).split(' ');
+                    
+                    this.correctWords = 0;
+                    for (let i = 0; i < Math.min(words.length, targetWords.length); i++) {
+                        if (words[i] === targetWords[i]) {
+                            this.correctWords++;
+                        }
+                    }
+                },
+                
+                // Utility functions
+                formatTime(seconds) {
+                    const mins = Math.floor(seconds / 60);
+                    const secs = seconds % 60;
+                    return `${mins}:${secs.toString().padStart(2, '0')}`;
+                },
+                
+                focusInput() {
+                    this.$nextTick(() => {
+                        this.$refs.typingInput.focus();
+                    });
+                },
+                
+                // Results management
+                saveResult() {
+                    const result = {
+                        date: new Date().toISOString(),
+                        wpm: Math.round(this.finalWpm),
+                        accuracy: Math.round(this.finalAccuracy),
+                        duration: this.testDuration,
+                        difficulty: this.currentDifficulty,
+                        correctWords: this.correctWords,
+                        totalErrors: this.permanentErrors, // Use permanent errors for saved results
+                        totalKeysPressed: this.totalKeysPressed
+                    };
+                    
+                    this.testHistory.push(result);
+                    this.saveHistory();
+                    this.showToastMessage('Result saved!', 'success');
+                },
+                
+                shareResult() {
+                    const text = `I just completed a typing test!\n🚀 WPM: ${Math.round(this.finalWpm)}\n🎯 Accuracy: ${Math.round(this.finalAccuracy)}%\n⏱️ Duration: ${this.testDuration}s\n📊 Difficulty: ${this.currentDifficulty}`;
+                    
+                    if (navigator.share) {
+                        navigator.share({
+                            title: 'My Typing Speed Test Result',
+                            text: text
+                        });
+                    } else {
+                        navigator.clipboard.writeText(text).then(() => {
+                            this.showToastMessage('Result copied to clipboard!', 'success');
+                        }).catch(() => {
+                            this.showToastMessage('Failed to copy result', 'error');
+                        });
+                    }
+                },
+                
+                // History management
+                loadHistory() {
+                    const saved = localStorage.getItem('typingSpeedHistory');
+                    if (saved) {
+                        this.testHistory = JSON.parse(saved);
+                    }
+                },
+                
+                saveHistory() {
+                    localStorage.setItem('typingSpeedHistory', JSON.stringify(this.testHistory));
+                },
+                
+                clearHistory() {
+                    this.testHistory = [];
+                    localStorage.removeItem('typingSpeedHistory');
+                    this.showToastMessage('History cleared', 'success');
+                },
+                
+                // Settings management
+                loadSettings() {
+                    const saved = localStorage.getItem('typingSpeedSettings');
+                    if (saved) {
+                        const settings = JSON.parse(saved);
+                        Object.assign(this, settings);
+                    }
+                },
+                
+                saveSettings() {
+                    const settings = {
+                        testDuration: this.testDuration,
+                        difficultyLevel: this.difficultyLevel,
+                        showLiveWpm: this.showLiveWpm,
+                        soundEnabled: this.soundEnabled,
+                        autoRestart: this.autoRestart
+                    };
+                    localStorage.setItem('typingSpeedSettings', JSON.stringify(settings));
+                },
+                
+                resetSettings() {
+                    this.testDuration = 60;
+                    this.difficultyLevel = 'medium';
+                    this.showLiveWpm = true;
+                    this.soundEnabled = true;
+                    this.autoRestart = false;
+                    this.saveSettings();
+                    this.generateNewText();
+                    this.showToastMessage('Settings reset to default', 'success');
+                },
+                
+                // UI helpers
+                showToastMessage(message, type = 'success') {
+                    this.toastMessage = message;
+                    this.toastType = type;
+                    this.showToast = true;
+                    setTimeout(() => {
+                        this.showToast = false;
+                    }, 3000);
+                },
+                
+                // Watch for settings changes
+                $watch: {
+                    testDuration() { this.saveSettings(); },
+                    difficultyLevel() { this.saveSettings(); },
+                    showLiveWpm() { this.saveSettings(); },
+                    soundEnabled() { this.saveSettings(); },
+                    autoRestart() { this.saveSettings(); }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
