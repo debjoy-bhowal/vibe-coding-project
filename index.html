@@ -38,8 +38,8 @@
 <body class="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100" x-data="hubApp()">
     
     <!-- Navigation Header -->
-    <nav class="navbar bg-white/80 backdrop-blur-md shadow-lg sticky top-0 z-50">
-        <div class="navbar-start">
+    <nav class="navbar bg-white/80 backdrop-blur-md shadow-lg sticky top-0 z-50 px-2 sm:px-4">
+        <div class="navbar-start flex-1 lg:flex-none">
             <div class="dropdown">
                 <div tabindex="0" role="button" class="btn btn-ghost lg:hidden">
                     <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 17 14">
@@ -51,9 +51,10 @@
                     <li><a href="#about">About</a></li>
                 </ul>
             </div>
-            <a class="btn btn-ghost text-xl font-bold text-primary">
+            <a class="btn btn-ghost text-lg sm:text-xl font-bold text-primary truncate">
                 <i class="fas fa-rocket"></i>
-                Vibe Coding
+                <span class="hidden sm:inline">Vibe Coding</span>
+                <span class="sm:hidden">Vibe</span>
             </a>
         </div>
         <div class="navbar-center hidden lg:flex">
@@ -62,9 +63,12 @@
                 <li><a href="#about" class="hover:text-primary">About</a></li>
             </ul>
         </div>
-        <div class="navbar-end">
-            <div class="badge badge-primary badge-outline">
-                <span x-text="completedTools"></span> Tools & Games Built
+        <div class="navbar-end flex-none">
+            <div class="badge badge-primary badge-outline text-xs sm:text-sm hidden xs:flex">
+                <span x-text="completedTools" class="hidden sm:inline"></span>
+                <span x-text="completedTools" class="sm:hidden"></span>
+                <span class="hidden sm:inline"> Tools & Games Built</span>
+                <span class="sm:hidden"> Tools</span>
             </div>
         </div>
     </nav>

@@ -157,6 +157,17 @@ This project is a showcase of multiple web applications - from productivity tool
 - **Level Management**: Always-accessible level selection, progress saving, and hint system
 - **Advanced Mechanics**: Door trapping system, victory animations, and localStorage progress persistence
 
+#### 🪐 Tiny Planet Simulator
+- **Physics Simulation**: Real-time orbital mechanics with inverse square law gravitational physics
+- **Interactive Gravity Control**: Click anywhere to apply gravitational pull toward cursor position
+- **Orbital Mechanics**: Planets naturally establish elliptical orbits around central sun
+- **Target System**: Hit all green targets to complete levels with strategic trajectory planning
+- **Dynamic Planet Spawning**: Continuous planet generation from screen edges with varied properties
+- **Customizable Physics**: Adjustable gravity strength (0.5x to 3.0x) for different difficulty levels
+- **Visual Effects**: Glowing celestial bodies, particle starfield, gravity field visualization
+- **Performance Optimized**: 60fps smooth animation with efficient collision detection
+- **Game Progression**: Score system, time tracking, completion bonuses, and level generation
+
 ## 🚀 Quick Start
 
 ### Prerequisites

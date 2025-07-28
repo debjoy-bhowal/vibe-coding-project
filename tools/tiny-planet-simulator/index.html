@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tiny Planet Simulator - Vibe Coding</title>
+    <meta name="description" content="Interactive gravity simulation - control a sun and slingshot planets into targets!">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- DaisyUI -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@3.9.4/dist/full.css" rel="stylesheet" type="text/css" />
+    
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#8B5CF6',
+                        secondary: '#06B6D4',
+                        accent: '#F59E0B',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        .sun {
+            background: radial-gradient(circle, #ffd700, #ff6b00);
+            box-shadow: 
+                0 0 20px #ffd700,
+                0 0 40px #ff6b00,
+                0 0 60px #ff4500,
+                inset 0 0 20px rgba(255, 255, 255, 0.3);
+            animation: pulse-sun 2s ease-in-out infinite alternate;
+        }
+        
+        .planet {
+            border-radius: 50%;
+            transition: all 0.1s ease;
+            box-shadow: 
+                0 0 10px rgba(59, 130, 246, 0.6),
+                0 0 20px rgba(59, 130, 246, 0.4),
+                inset 2px 2px 4px rgba(255, 255, 255, 0.3);
+        }
+        
+        .planet-red {
+            background: radial-gradient(circle at 30% 30%, #ff6b6b, #dc2626);
+        }
+        
+        .planet-blue {
+            background: radial-gradient(circle at 30% 30%, #60a5fa, #2563eb);
+        }
+        
+        .planet-green {
+            background: radial-gradient(circle at 30% 30%, #34d399, #059669);
+        }
+        
+        .planet-purple {
+            background: radial-gradient(circle at 30% 30%, #a78bfa, #7c3aed);
+        }
+        
+        .target {
+            border: 3px dashed #10b981;
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: 50%;
+            animation: pulse-target 1.5s ease-in-out infinite;
+        }
+        
+        .target.hit {
+            background: rgba(16, 185, 129, 0.8);
+            animation: hit-flash 0.5s ease-out;
+            transform: scale(1.3);
+            border-color: #10b981;
+            box-shadow: 
+                0 0 20px rgba(16, 185, 129, 0.8),
+                0 0 40px rgba(16, 185, 129, 0.6),
+                0 0 60px rgba(16, 185, 129, 0.4);
+        }
+        
+        @keyframes pulse-sun {
+            0% { transform: scale(1); box-shadow: 0 0 20px #ffd700, 0 0 40px #ff6b00, 0 0 60px #ff4500; }
+            100% { transform: scale(1.05); box-shadow: 0 0 30px #ffd700, 0 0 50px #ff6b00, 0 0 70px #ff4500; }
+        }
+        
+        @keyframes pulse-target {
+            0%, 100% { opacity: 0.7; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
+        }
+        
+        @keyframes hit-flash {
+            0% { 
+                background: rgba(16, 185, 129, 1); 
+                transform: scale(1.5); 
+                box-shadow: 0 0 30px rgba(16, 185, 129, 1);
+            }
+            25% {
+                background: rgba(255, 255, 255, 0.9);
+                transform: scale(1.4);
+                box-shadow: 0 0 40px rgba(255, 255, 255, 0.8);
+            }
+            50% {
+                background: rgba(16, 185, 129, 0.9);
+                transform: scale(1.3);
+                box-shadow: 0 0 35px rgba(16, 185, 129, 0.9);
+            }
+            100% { 
+                background: rgba(16, 185, 129, 0.6); 
+                transform: scale(1.2);
+                box-shadow: 0 0 25px rgba(16, 185, 129, 0.6);
+                opacity: 0;
+            }
+        }
+        
+        .gravity-field {
+            position: absolute;
+            border-radius: 50%;
+            border: 3px solid rgba(139, 92, 246, 0.4);
+            background: radial-gradient(circle, transparent 40%, rgba(139, 92, 246, 0.15) 70%, rgba(139, 92, 246, 0.05) 100%);
+            pointer-events: none;
+            animation: gravity-pulse 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes gravity-pulse {
+            0%, 100% { opacity: 0.6; transform: scale(1); border-color: rgba(139, 92, 246, 0.4); }
+            50% { opacity: 0.8; transform: scale(1.05); border-color: rgba(139, 92, 246, 0.6); }
+        }
+        
+        .trajectory {
+            position: absolute;
+            width: 2px;
+            background: rgba(59, 130, 246, 0.4);
+            transform-origin: bottom;
+            pointer-events: none;
+        }
+        
+        .game-area {
+            background: radial-gradient(circle at center, #0f172a 0%, #000000 100%);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s ease-in-out infinite;
+        }
+        
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        
+        .gravity-click-effect {
+            position: absolute;
+            border-radius: 50%;
+            border: 3px solid rgba(139, 92, 246, 0.8);
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.2) 0%, transparent 70%);
+            pointer-events: none;
+            animation: gravity-click-pulse 0.8s ease-out forwards;
+            transform-origin: center;
+        }
+        
+        @keyframes gravity-click-pulse {
+            0% { 
+                opacity: 1; 
+                transform: scale(0.2); 
+                border-color: rgba(139, 92, 246, 1);
+                background: radial-gradient(circle, rgba(139, 92, 246, 0.6) 0%, transparent 70%);
+            }
+            30% {
+                opacity: 0.9;
+                transform: scale(0.8);
+                border-color: rgba(139, 92, 246, 0.9);
+                background: radial-gradient(circle, rgba(139, 92, 246, 0.4) 0%, transparent 70%);
+            }
+            70% {
+                opacity: 0.5;
+                transform: scale(1.2);
+                border-color: rgba(139, 92, 246, 0.5);
+                background: radial-gradient(circle, rgba(139, 92, 246, 0.2) 0%, transparent 70%);
+            }
+            100% { 
+                opacity: 0; 
+                transform: scale(1.5); 
+                border-color: rgba(139, 92, 246, 0);
+                background: radial-gradient(circle, transparent 0%, transparent 70%);
+            }
+        }
+        
+        .gravity-vector {
+            position: absolute;
+            width: 2px;
+            background: linear-gradient(to top, rgba(139, 92, 246, 0.8), transparent);
+            transform-origin: bottom;
+            pointer-events: none;
+            animation: vector-fade 0.5s ease-out forwards;
+        }
+        
+        @keyframes vector-fade {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900" x-data="planetSimulator()">
+    
+    <!-- Header -->
+    <header class="bg-black/80 backdrop-blur-md shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <a href="../../" class="btn btn-ghost btn-sm">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        <span class="hidden md:inline">Back to Hub</span>
+                    </a>
+                    <div class="flex items-center space-x-2">
+                        <div class="text-2xl md:text-3xl">🪐</div>
+                        <div>
+                            <h1 class="text-lg md:text-2xl font-bold text-white">
+                                Tiny Planet Simulator
+                            </h1>
+                            <p class="text-xs md:text-sm text-gray-300 hidden sm:block">Control gravity and guide planets to targets</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button @click="showInstructions = true" class="btn btn-ghost btn-sm text-white">
+                        <i class="fas fa-question-circle"></i>
+                        <span class="hidden md:inline">Help</span>
+                    </button>
+                    <button @click="resetSimulation()" class="btn btn-outline btn-sm text-white">
+                        <i class="fas fa-redo"></i>
+                        <span class="hidden md:inline">Reset</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Game Stats -->
+    <div class="container mx-auto px-4 py-4">
+        <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
+            <div class="bg-white/10 backdrop-blur-md rounded-lg p-3 text-center">
+                <div class="text-xl font-bold text-yellow-400" x-text="score"></div>
+                <div class="text-xs text-gray-300">Score</div>
+            </div>
+            <div class="bg-white/10 backdrop-blur-md rounded-lg p-3 text-center">
+                <div class="text-xl font-bold text-blue-400" x-text="planetsHit"></div>
+                <div class="text-xs text-gray-300">Targets Hit</div>
+            </div>
+            <div class="bg-white/10 backdrop-blur-md rounded-lg p-3 text-center">
+                <div class="text-xl font-bold text-green-400" x-text="targets.length"></div>
+                <div class="text-xs text-gray-300">Targets Left</div>
+            </div>
+            <div class="bg-white/10 backdrop-blur-md rounded-lg p-3 text-center">
+                <div class="text-xl font-bold text-cyan-400" x-text="planets.length"></div>
+                <div class="text-xs text-gray-300">Planets</div>
+            </div>
+            <div class="bg-white/10 backdrop-blur-md rounded-lg p-3 text-center">
+                <div class="text-xl font-bold text-purple-400" x-text="gravityStrength.toFixed(1)"></div>
+                <div class="text-xs text-gray-300">Gravity</div>
+            </div>
+            <div class="bg-white/10 backdrop-blur-md rounded-lg p-3 text-center">
+                <div class="text-xl font-bold text-orange-400" x-text="formatTime(gameTime)"></div>
+                <div class="text-xs text-gray-300">Time</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Area -->
+    <div class="container mx-auto px-4 pb-8">
+        <div class="relative">
+            <!-- Simulation Canvas -->
+            <div 
+                class="game-area w-full h-[600px] rounded-lg border border-purple-500/50 relative cursor-crosshair"
+                @click="handleGravityClick($event)"
+                @mousedown="startContinuousGravity($event)"
+                @mouseup="stopContinuousGravity()"
+                @mouseleave="stopContinuousGravity()"
+                @mousemove="updateMousePosition($event)"
+                x-ref="gameArea"
+            >
+                <!-- Background Stars -->
+                <template x-for="star in stars" :key="star.id">
+                    <div 
+                        class="star"
+                        :style="`left: ${star.x}px; top: ${star.y}px; width: ${star.size}px; height: ${star.size}px; animation-delay: ${star.delay}s;`"
+                    ></div>
+                </template>
+
+                <!-- Gravity Field Visualization -->
+                <div 
+                    x-show="showGravityField"
+                    class="gravity-field"
+                    :style="`left: ${sun.x - gravityRadius}px; top: ${sun.y - gravityRadius}px; width: ${gravityRadius * 2}px; height: ${gravityRadius * 2}px;`"
+                ></div>
+
+                <!-- Sun -->
+                <div 
+                    class="sun absolute"
+                    :style="`left: ${sun.x - sun.radius}px; top: ${sun.y - sun.radius}px; width: ${sun.radius * 2}px; height: ${sun.radius * 2}px;`"
+                ></div>
+
+                <!-- Planets -->
+                <template x-for="planet in planets" :key="planet.id">
+                    <div 
+                        class="planet absolute"
+                        :class="planet.color"
+                        :style="`left: ${planet.x - planet.radius}px; top: ${planet.y - planet.radius}px; width: ${planet.radius * 2}px; height: ${planet.radius * 2}px;`"
+                    ></div>
+                </template>
+
+                <!-- Targets -->
+                <template x-for="target in targets.filter(t => !t.hit)" :key="target.id">
+                    <div 
+                        class="target absolute"
+                        :style="`left: ${target.x - target.radius}px; top: ${target.y - target.radius}px; width: ${target.radius * 2}px; height: ${target.radius * 2}px;`"
+                    ></div>
+                </template>
+
+                <!-- Hit Targets (for animation) -->
+                <template x-for="target in targets.filter(t => t.hit)" :key="'hit-' + target.id">
+                    <div 
+                        class="target absolute hit"
+                        :style="`left: ${target.x - target.radius}px; top: ${target.y - target.radius}px; width: ${target.radius * 2}px; height: ${target.radius * 2}px;`"
+                    ></div>
+                </template>
+
+                <!-- Gravity Click Effects -->
+                <template x-for="effect in gravityEffects" :key="'effect-' + effect.id">
+                    <div 
+                        class="gravity-click-effect"
+                        :style="`left: ${effect.x - effect.size/2}px; top: ${effect.y - effect.size/2}px; width: ${effect.size}px; height: ${effect.size}px;`"
+                    ></div>
+                </template>
+
+                <!-- Gravity Force Vectors -->
+                <template x-for="vector in gravityVectors" :key="'vector-' + vector.id">
+                    <div 
+                        class="gravity-vector"
+                        :style="`left: ${vector.x}px; top: ${vector.y - vector.length}px; height: ${vector.length}px; transform: rotate(${vector.angle}deg);`"
+                    ></div>
+                </template>
+
+                <!-- Pause Overlay -->
+                <div x-show="!isRunning && !gameEnded" class="absolute inset-0 bg-black/50 flex items-center justify-center">
+                    <div class="text-center text-white">
+                        <div class="text-6xl mb-4">⏸️</div>
+                        <h3 class="text-2xl font-bold mb-2">Simulation Paused</h3>
+                        <p class="text-gray-300 mb-4">Click play to continue</p>
+                    </div>
+                </div>
+
+                <!-- Game Over Overlay -->
+                <div x-show="gameEnded" class="absolute inset-0 bg-black/70 flex items-center justify-center">
+                    <div class="text-center text-white bg-white/10 backdrop-blur-md rounded-xl p-8">
+                        <div class="text-6xl mb-4">🎯</div>
+                        <h3 class="text-3xl font-bold mb-2 text-green-400">Mission Complete!</h3>
+                        <p class="text-xl text-gray-300 mb-4">All targets hit!</p>
+                        <div class="grid grid-cols-2 gap-4 mb-6">
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-yellow-400" x-text="score"></div>
+                                <div class="text-sm text-gray-300">Final Score</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-orange-400" x-text="formatTime(gameTime)"></div>
+                                <div class="text-sm text-gray-300">Time</div>
+                            </div>
+                        </div>
+                        <button @click="startNewGame()" class="btn btn-primary">
+                            <i class="fas fa-play mr-2"></i>Play Again
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controls Panel -->
+            <div class="mt-6 bg-white/10 backdrop-blur-md rounded-lg p-6">
+                <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                    <!-- Play Controls -->
+                    <div class="flex items-center gap-4">
+                        <button 
+                            @click="toggleSimulation()" 
+                            class="btn btn-primary btn-lg"
+                            :class="{ 'btn-success': !isRunning }"
+                        >
+                            <i :class="isRunning ? 'fas fa-pause' : 'fas fa-play'" class="mr-2"></i>
+                            <span x-text="isRunning ? 'Pause' : 'Play'"></span>
+                        </button>
+                        <button @click="startNewGame()" class="btn btn-outline text-white">
+                            <i class="fas fa-rocket mr-2"></i>New Game
+                        </button>
+                    </div>
+
+                    <!-- Gravity Control -->
+                    <div class="flex items-center gap-4">
+                        <label for="gravity-control" class="text-white font-semibold">Gravity:</label>
+                        <input 
+                            id="gravity-control"
+                            type="range" 
+                            min="0.5" 
+                            max="3" 
+                            step="0.1" 
+                            x-model="gravityStrength"
+                            class="range range-primary w-32"
+                        >
+                        <span class="text-white text-sm w-8" x-text="gravityStrength.toFixed(1)"></span>
+                    </div>
+
+                    <!-- Options -->
+                    <div class="flex items-center gap-4">
+                        <label class="flex items-center gap-2 text-white">
+                            <input type="checkbox" x-model="showGravityField" class="checkbox checkbox-sm">
+                            <span class="text-sm">Show Gravity Field</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructions Modal -->
+    <div x-show="showInstructions" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+         @click.self="showInstructions = false">
+        
+        <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold">How to Play Tiny Planet Simulator</h2>
+                    <button @click="showInstructions = false" class="btn btn-ghost btn-sm">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <h3 class="font-bold text-lg mb-2">🎯 Objective</h3>
+                        <p class="text-gray-600">Guide planets to hit all the green targets by controlling gravity! Click anywhere to pull planets toward your cursor.</p>
+                    </div>
+                    
+                    <div>
+                        <h3 class="font-bold text-lg mb-2">🎮 Controls</h3>
+                        <ul class="text-gray-600 space-y-1">
+                            <li>• <strong>Click</strong>: Apply single gravitational pull toward cursor</li>
+                            <li>• <strong>Hold Mouse</strong>: Continuous gravitational influence (reduced strength)</li>
+                            <li>• <strong>Play/Pause</strong>: Control simulation</li>
+                            <li>• <strong>Gravity Slider</strong>: Adjust gravitational strength</li>
+                            <li>• <strong>Show Gravity Field</strong>: Visualize sun's gravitational influence</li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h3 class="font-bold text-lg mb-2">🌟 Game Elements</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                            <div class="flex items-center gap-2">
+                                <div class="w-4 h-4 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500"></div>
+                                <span><strong>Sun</strong> - Central gravity source</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="w-3 h-3 rounded-full bg-gradient-to-r from-blue-400 to-blue-600"></div>
+                                <span><strong>Planets</strong> - Objects to guide</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="w-4 h-4 rounded-full border-2 border-dashed border-green-500"></div>
+                                <span><strong>Targets</strong> - Hit to score points</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="w-4 h-4 rounded-full border border-purple-400 bg-purple-100"></div>
+                                <span><strong>Gravity Field</strong> - Click influence zone</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h3 class="font-bold text-lg mb-2">💡 Strategy Tips</h3>
+                        <ul class="text-gray-600 space-y-1">
+                            <li>• <strong>Timing</strong>: Click when planets are positioned for optimal trajectory</li>
+                            <li>• <strong>Slingshot</strong>: Use the sun's gravity to accelerate planets</li>
+                            <li>• <strong>Gravity Strength</strong>: Adjust for precise control vs. powerful pulls</li>
+                            <li>• <strong>Multiple Targets</strong>: Plan routes that hit several targets in sequence</li>
+                            <li>• <strong>Orbital Mechanics</strong>: Planets naturally orbit - use this to your advantage!</li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h3 class="font-bold text-lg mb-2">🏆 Scoring</h3>
+                        <ul class="text-gray-600 space-y-1">
+                            <li>• Base points for hitting targets</li>
+                            <li>• Bonus points for speed and efficiency</li>
+                            <li>• Complete all targets to win the level</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="flex gap-4 mt-6">
+                    <button @click="showInstructions = false" class="btn btn-primary flex-1">
+                        Start Playing!
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function planetSimulator() {
+            return {
+                // Game state
+                isRunning: false,
+                gameEnded: false,
+                gameTime: 0,
+                score: 0,
+                planetsHit: 0,
+                
+                // Settings
+                gravityStrength: 1.5,
+                showGravityField: true,
+                gravityRadius: 100,
+                
+                // UI state
+                showInstructions: false,
+                mouseX: 0,
+                mouseY: 0,
+                isMouseDown: false, // Track mouse button state
+                continuousGravityTimer: null, // Timer for continuous gravity application
+                
+                // Game objects
+                sun: { x: 0, y: 0, radius: 30, mass: 2000 }, // Increased size and mass
+                planets: [],
+                targets: [],
+                stars: [],
+                gravityEffects: [], // Visual effects for gravity clicks
+                gravityVectors: [], // Force direction indicators
+                
+                // Physics constants
+                GRAVITY_CONSTANT: 150, // Increased from 50 for stronger sun influence
+                PLANET_SPAWN_RATE: 3500, // Slightly slower spawning to accommodate more planets
+                MAX_PLANETS: 12, // Increased from 6 to 12 for more populated gameplay
+                
+                // Timers
+                gameTimer: null,
+                planetSpawner: null,
+                animationFrame: null,
+                
+                init() {
+                    this.setupGameArea();
+                    this.generateStars();
+                    this.generateTargets();
+                    this.spawnInitialPlanets();
+                    this.showInstructions = true;
+                },
+                
+                setupGameArea() {
+                    const gameArea = this.$refs.gameArea;
+                    if (gameArea) {
+                        const rect = gameArea.getBoundingClientRect();
+                        this.sun.x = rect.width / 2;
+                        this.sun.y = rect.height / 2;
+                        this.gravityRadius = Math.min(rect.width, rect.height) / 2.5; // Larger gravity field
+                    }
+                },
+                
+                generateStars() {
+                    this.stars = [];
+                    for (let i = 0; i < 50; i++) {
+                        this.stars.push({
+                            id: i,
+                            x: Math.random() * 800,
+                            y: Math.random() * 600,
+                            size: Math.random() * 2 + 1,
+                            delay: Math.random() * 3
+                        });
+                    }
+                },
+                
+                generateTargets() {
+                    const gameArea = this.$refs.gameArea;
+                    if (!gameArea) return;
+                    
+                    const rect = gameArea.getBoundingClientRect();
+                    this.targets = [];
+                    
+                    // Generate 5-7 targets at completely random positions
+                    const targetCount = Math.floor(Math.random() * 3) + 5; // 5-7 targets
+                    
+                    for (let i = 0; i < targetCount; i++) {
+                        let x, y;
+                        let validPosition = false;
+                        let attempts = 0;
+                        
+                        // Keep trying until we find a position that doesn't overlap with sun or other targets
+                        while (!validPosition && attempts < 50) {
+                            // Random position across the entire game area with some margin
+                            x = Math.random() * (rect.width - 100) + 50;
+                            y = Math.random() * (rect.height - 100) + 50;
+                            
+                            // Check distance from sun (avoid placing targets too close to sun)
+                            const sunDistance = Math.sqrt((x - this.sun.x) ** 2 + (y - this.sun.y) ** 2);
+                            
+                            // Check distance from other targets (avoid clustering)
+                            let tooCloseToOthers = false;
+                            for (let existingTarget of this.targets) {
+                                const distance = Math.sqrt((x - existingTarget.x) ** 2 + (y - existingTarget.y) ** 2);
+                                if (distance < 80) { // Minimum distance between targets
+                                    tooCloseToOthers = true;
+                                    break;
+                                }
+                            }
+                            
+                            // Valid if not too close to sun (increased distance due to stronger gravity) and not too close to other targets
+                            if (sunDistance > 120 && !tooCloseToOthers) {
+                                validPosition = true;
+                            }
+                            
+                            attempts++;
+                        }
+                        
+                        // If we couldn't find a perfect position, use the last attempted position
+                        if (!validPosition) {
+                            x = Math.random() * (rect.width - 100) + 50;
+                            y = Math.random() * (rect.height - 100) + 50;
+                        }
+                        
+                        this.targets.push({
+                            id: i,
+                            x: x,
+                            y: y,
+                            radius: Math.random() * 10 + 20, // Random size between 20-30
+                            hit: false
+                        });
+                    }
+                },
+                
+                spawnInitialPlanets() {
+                    // Spawn a few initial planets
+                    for (let i = 0; i < 3; i++) {
+                        setTimeout(() => this.spawnPlanet(), i * 1000);
+                    }
+                },
+                
+                spawnPlanet() {
+                    if (this.planets.length >= this.MAX_PLANETS) return;
+                    
+                    const gameArea = this.$refs.gameArea;
+                    if (!gameArea) return;
+                    
+                    const rect = gameArea.getBoundingClientRect();
+                    const colors = ['planet-red', 'planet-blue', 'planet-green', 'planet-purple'];
+                    
+                    // Spawn from edges with orbital velocity
+                    const edge = Math.floor(Math.random() * 4);
+                    let x, y, vx, vy;
+                    
+                    switch (edge) {
+                        case 0: // top
+                            x = Math.random() * rect.width;
+                            y = 0;
+                            // Calculate orbital velocity for top spawn (further reduced speed)
+                            const topDist = Math.sqrt((x - this.sun.x) ** 2 + (this.sun.y) ** 2);
+                            const orbitalSpeedTop = Math.sqrt(this.GRAVITY_CONSTANT * this.sun.mass / topDist) * 0.25; // Reduced from 0.4
+                            vx = x < this.sun.x ? orbitalSpeedTop : -orbitalSpeedTop;
+                            vy = Math.random() * 1 + 0.5; // Reduced from 1.5+1
+                            break;
+                        case 1: // right
+                            x = rect.width;
+                            y = Math.random() * rect.height;
+                            const rightDist = Math.sqrt((rect.width - this.sun.x) ** 2 + (y - this.sun.y) ** 2);
+                            const orbitalSpeedRight = Math.sqrt(this.GRAVITY_CONSTANT * this.sun.mass / rightDist) * 0.25;
+                            vx = -(Math.random() * 1 + 0.5);
+                            vy = y < this.sun.y ? -orbitalSpeedRight : orbitalSpeedRight;
+                            break;
+                        case 2: // bottom
+                            x = Math.random() * rect.width;
+                            y = rect.height;
+                            const bottomDist = Math.sqrt((x - this.sun.x) ** 2 + (rect.height - this.sun.y) ** 2);
+                            const orbitalSpeedBottom = Math.sqrt(this.GRAVITY_CONSTANT * this.sun.mass / bottomDist) * 0.25;
+                            vx = x > this.sun.x ? orbitalSpeedBottom : -orbitalSpeedBottom;
+                            vy = -(Math.random() * 1 + 0.5);
+                            break;
+                        case 3: // left
+                            x = 0;
+                            y = Math.random() * rect.height;
+                            const leftDist = Math.sqrt((this.sun.x) ** 2 + (y - this.sun.y) ** 2);
+                            const orbitalSpeedLeft = Math.sqrt(this.GRAVITY_CONSTANT * this.sun.mass / leftDist) * 0.25;
+                            vx = Math.random() * 1 + 0.5;
+                            vy = y > this.sun.y ? -orbitalSpeedLeft : orbitalSpeedLeft;
+                            break;
+                    }
+                    
+                    const planet = {
+                        id: Date.now() + Math.random(),
+                        x: x,
+                        y: y,
+                        vx: vx,
+                        vy: vy,
+                        radius: Math.random() * 6 + 8, // Slightly larger planets
+                        mass: Math.random() * 30 + 20, // Lighter for better orbital dynamics
+                        color: colors[Math.floor(Math.random() * colors.length)],
+                        trail: [],
+                        spawnTime: Date.now() // Track when planet was spawned
+                    };
+                    
+                    this.planets.push(planet);
+                },
+                
+                updatePhysics() {
+                    if (!this.isRunning) return;
+                    
+                    const gameArea = this.$refs.gameArea;
+                    if (!gameArea) return;
+                    
+                    const rect = gameArea.getBoundingClientRect();
+                    
+                    // Update planets
+                    this.planets.forEach((planet, index) => {
+                        // Apply sun gravity
+                        const dx = this.sun.x - planet.x;
+                        const dy = this.sun.y - planet.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance > 0) {
+                            // Stronger gravitational force with better physics
+                            const force = (this.GRAVITY_CONSTANT * this.sun.mass) / (distance * distance);
+                            const ax = (force * dx / distance) / planet.mass;
+                            const ay = (force * dy / distance) / planet.mass;
+                            
+                            // Apply gravitational acceleration (reduced for slower gameplay)
+                            planet.vx += ax * 0.02; // Reduced from 0.025
+                            planet.vy += ay * 0.02;
+                            
+                            // Add some orbital stability for planets that get too close
+                            if (distance < 60) {
+                                // Apply tangential velocity to create orbital motion
+                                const tangentVx = -dy / distance * 2;
+                                const tangentVy = dx / distance * 2;
+                                planet.vx += tangentVx * 0.1;
+                                planet.vy += tangentVy * 0.1;
+                            }
+                        }
+                        
+                        // Apply velocity damping to prevent runaway speeds
+                        const speed = Math.sqrt(planet.vx * planet.vx + planet.vy * planet.vy);
+                        if (speed > 8) { // Further reduced maximum speed limit for slower gameplay
+                            planet.vx = (planet.vx / speed) * 8;
+                            planet.vy = (planet.vy / speed) * 8;
+                        }
+                        
+                        // Update position
+                        planet.x += planet.vx;
+                        planet.y += planet.vy;
+                        
+                        // Check target collisions
+                        this.targets.forEach((target, targetIndex) => {
+                            if (!target.hit) {
+                                const tdx = planet.x - target.x;
+                                const tdy = planet.y - target.y;
+                                const tdist = Math.sqrt(tdx * tdx + tdy * tdy);
+                                
+                                if (tdist < planet.radius + target.radius) {
+                                    target.hit = true;
+                                    this.planetsHit++;
+                                    this.score += 100 + Math.floor(this.gameTime / 1000);
+                                    
+                                    // Remove planet
+                                    this.planets.splice(index, 1);
+                                    
+                                    // Remove target after a brief visual feedback
+                                    setTimeout(() => {
+                                        this.targets.splice(targetIndex, 1);
+                                        
+                                        // Check win condition
+                                        if (this.targets.length === 0) {
+                                            this.endGame();
+                                        }
+                                    }, 500); // Half second delay to show hit animation
+                                }
+                            }
+                        });
+                        
+                        // Remove planets that go too far off screen (increased buffer zone)
+                        // But only if they've been on screen for at least 3 seconds
+                        const timeAlive = Date.now() - planet.spawnTime;
+                        if (timeAlive > 3000 && (planet.x < -150 || planet.x > rect.width + 150 || 
+                            planet.y < -150 || planet.y > rect.height + 150)) {
+                            this.planets.splice(index, 1);
+                        }
+                    });
+                },
+                
+                handleGravityClick(event) {
+                    if (!this.isRunning) return;
+                    
+                    const rect = event.currentTarget.getBoundingClientRect();
+                    const clickX = event.clientX - rect.left;
+                    const clickY = event.clientY - rect.top;
+                    
+                    // Create gravity click effect
+                    const effectSize = this.gravityStrength * 80; // Size based on gravity strength
+                    const effect = {
+                        id: Date.now(),
+                        x: clickX,
+                        y: clickY,
+                        size: effectSize
+                    };
+                    this.gravityEffects.push(effect);
+                    
+                    // Remove effect after animation
+                    setTimeout(() => {
+                        const index = this.gravityEffects.findIndex(e => e.id === effect.id);
+                        if (index !== -1) {
+                            this.gravityEffects.splice(index, 1);
+                        }
+                    }, 800);
+                    
+                    // Apply gravity pull toward click point and create vectors
+                    this.planets.forEach(planet => {
+                        const dx = clickX - planet.x;
+                        const dy = clickY - planet.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance > 0) {
+                            const force = this.gravityStrength * 200;
+                            const ax = (force * dx / distance) / planet.mass;
+                            const ay = (force * dy / distance) / planet.mass;
+                            
+                            planet.vx += ax * 0.1;
+                            planet.vy += ay * 0.1;
+                            
+                            // Create gravity vector visualization
+                            if (distance < 200) { // Only show vectors for nearby planets
+                                const vector = {
+                                    id: Date.now() + Math.random(),
+                                    x: planet.x,
+                                    y: planet.y,
+                                    targetX: clickX,
+                                    targetY: clickY,
+                                    length: Math.min(distance, 100),
+                                    angle: Math.atan2(dy, dx) * 180 / Math.PI + 90 // Convert to CSS rotation
+                                };
+                                this.gravityVectors.push(vector);
+                                
+                                // Remove vector after animation
+                                setTimeout(() => {
+                                    const index = this.gravityVectors.findIndex(v => v.id === vector.id);
+                                    if (index !== -1) {
+                                        this.gravityVectors.splice(index, 1);
+                                    }
+                                }, 500);
+                            }
+                        }
+                    });
+                },
+                
+                updateMousePosition(event) {
+                    const rect = event.currentTarget.getBoundingClientRect();
+                    this.mouseX = event.clientX - rect.left;
+                    this.mouseY = event.clientY - rect.top;
+                },
+                
+                startContinuousGravity(event) {
+                    if (!this.isRunning) return;
+                    
+                    this.isMouseDown = true;
+                    const rect = event.currentTarget.getBoundingClientRect();
+                    this.mouseX = event.clientX - rect.left;
+                    this.mouseY = event.clientY - rect.top;
+                    
+                    // Apply gravity immediately
+                    this.applyContinuousGravity();
+                    
+                    // Start continuous gravity application
+                    this.continuousGravityTimer = setInterval(() => {
+                        if (this.isMouseDown && this.isRunning) {
+                            this.applyContinuousGravity();
+                        }
+                    }, 50); // Apply gravity every 50ms while held
+                },
+                
+                stopContinuousGravity() {
+                    this.isMouseDown = false;
+                    if (this.continuousGravityTimer) {
+                        clearInterval(this.continuousGravityTimer);
+                        this.continuousGravityTimer = null;
+                    }
+                },
+                
+                applyContinuousGravity() {
+                    if (!this.isRunning || !this.isMouseDown) return;
+                    
+                    // Create gravity click effect (less frequent for continuous mode)
+                    if (Math.random() < 0.3) { // Only 30% chance to show effect each time
+                        const effectSize = this.gravityStrength * 60; // Smaller effect for continuous mode
+                        const effect = {
+                            id: Date.now() + Math.random(),
+                            x: this.mouseX,
+                            y: this.mouseY,
+                            size: effectSize
+                        };
+                        this.gravityEffects.push(effect);
+                        
+                        // Remove effect after animation
+                        setTimeout(() => {
+                            const index = this.gravityEffects.findIndex(e => e.id === effect.id);
+                            if (index !== -1) {
+                                this.gravityEffects.splice(index, 1);
+                            }
+                        }, 800);
+                    }
+                    
+                    // Apply gravity pull toward mouse position (reduced strength for continuous mode)
+                    this.planets.forEach(planet => {
+                        const dx = this.mouseX - planet.x;
+                        const dy = this.mouseY - planet.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance > 0) {
+                            const force = this.gravityStrength * 120; // Reduced from 200 for continuous mode
+                            const ax = (force * dx / distance) / planet.mass;
+                            const ay = (force * dy / distance) / planet.mass;
+                            
+                            planet.vx += ax * 0.05; // Reduced from 0.1 for smoother continuous application
+                            planet.vy += ay * 0.05;
+                            
+                            // Create gravity vector visualization (less frequent)
+                            if (distance < 200 && Math.random() < 0.2) { // Only 20% chance for vectors
+                                const vector = {
+                                    id: Date.now() + Math.random(),
+                                    x: planet.x,
+                                    y: planet.y,
+                                    targetX: this.mouseX,
+                                    targetY: this.mouseY,
+                                    length: Math.min(distance, 80), // Shorter vectors for continuous mode
+                                    angle: Math.atan2(dy, dx) * 180 / Math.PI + 90
+                                };
+                                this.gravityVectors.push(vector);
+                                
+                                // Remove vector after animation
+                                setTimeout(() => {
+                                    const index = this.gravityVectors.findIndex(v => v.id === vector.id);
+                                    if (index !== -1) {
+                                        this.gravityVectors.splice(index, 1);
+                                    }
+                                }, 300); // Shorter duration for continuous mode
+                            }
+                        }
+                    });
+                },
+                
+                toggleSimulation() {
+                    this.isRunning = !this.isRunning;
+                    
+                    if (this.isRunning) {
+                        this.startGameLoop();
+                        this.startPlanetSpawner();
+                        this.startGameTimer();
+                    } else {
+                        this.stopGameLoop();
+                        this.stopPlanetSpawner();
+                        this.stopGameTimer();
+                    }
+                },
+                
+                startGameLoop() {
+                    const loop = () => {
+                        this.updatePhysics();
+                        if (this.isRunning) {
+                            this.animationFrame = requestAnimationFrame(loop);
+                        }
+                    };
+                    loop();
+                },
+                
+                stopGameLoop() {
+                    if (this.animationFrame) {
+                        cancelAnimationFrame(this.animationFrame);
+                        this.animationFrame = null;
+                    }
+                },
+                
+                startPlanetSpawner() {
+                    this.planetSpawner = setInterval(() => {
+                        if (this.isRunning) {
+                            this.spawnPlanet();
+                        }
+                    }, this.PLANET_SPAWN_RATE);
+                },
+                
+                stopPlanetSpawner() {
+                    if (this.planetSpawner) {
+                        clearInterval(this.planetSpawner);
+                        this.planetSpawner = null;
+                    }
+                },
+                
+                startGameTimer() {
+                    this.gameTimer = setInterval(() => {
+                        if (this.isRunning) {
+                            this.gameTime += 100;
+                        }
+                    }, 100);
+                },
+                
+                stopGameTimer() {
+                    if (this.gameTimer) {
+                        clearInterval(this.gameTimer);
+                        this.gameTimer = null;
+                    }
+                },
+                
+                resetSimulation() {
+                    this.isRunning = false;
+                    this.gameEnded = false;
+                    this.stopGameLoop();
+                    this.stopPlanetSpawner();
+                    this.stopGameTimer();
+                    this.stopContinuousGravity(); // Stop continuous gravity
+                    
+                    this.planets = [];
+                    this.targets.forEach(target => target.hit = false);
+                    this.gravityEffects = [];
+                    this.gravityVectors = [];
+                    this.gameTime = 0;
+                    this.score = 0;
+                    this.planetsHit = 0;
+                    
+                    this.spawnInitialPlanets();
+                },
+                
+                startNewGame() {
+                    this.resetSimulation();
+                    this.generateTargets();
+                    this.gravityEffects = [];
+                    this.gravityVectors = [];
+                    this.toggleSimulation();
+                },
+                
+                endGame() {
+                    this.isRunning = false;
+                    this.gameEnded = true;
+                    this.stopGameLoop();
+                    this.stopPlanetSpawner();
+                    this.stopGameTimer();
+                    
+                    // Bonus points for completion
+                    this.score += 500;
+                },
+                
+                formatTime(ms) {
+                    const seconds = Math.floor(ms / 1000);
+                    const minutes = Math.floor(seconds / 60);
+                    const remainingSeconds = seconds % 60;
+                    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+                }
+            }
+        }
+    </script>
+</body>
+</html>

@@ -3,7 +3,7 @@ function hubApp() {
     return {
         searchTerm: '',
         filterStatus: 'all',
-        completedTools: 13,
+        completedTools: 14,
         
         // Sample tools data - will be updated as real tools are built
         tools: [
@@ -136,6 +136,16 @@ function hubApp() {
                 statusLabel: 'Complete',
                 technologies: ['Game Logic', 'Dual Boards', 'Progressive Levels', 'Keyboard Controls'],
                 url: './tools/mirror-maze/'
+            },
+            {
+                id: 'tiny-planet-simulator',
+                name: 'Tiny Planet Simulator',
+                description: 'Interactive orbital mechanics game - control gravity to slingshot planets into targets!',
+                icon: '🪐',
+                status: 'complete',
+                statusLabel: 'Complete',
+                technologies: ['Physics Simulation', 'Orbital Mechanics', 'Gravity Control', 'Real-time Rendering'],
+                url: './tools/tiny-planet-simulator/'
             }
         ],
 
