@@ -3,7 +3,7 @@ function hubApp() {
     return {
         searchTerm: '',
         filterStatus: 'all',
-        completedTools: 12,
+        completedTools: 13,
         
         // Sample tools data - will be updated as real tools are built
         tools: [
@@ -126,6 +126,16 @@ function hubApp() {
                 statusLabel: 'Complete',
                 technologies: ['Canvas API', 'Interactive Drawing', 'PNG Export', 'CSS Generation'],
                 url: './tools/pixel-art-maker/'
+            },
+            {
+                id: 'mirror-maze',
+                name: 'Mirror Maze',
+                description: 'Dual-board puzzle where your shadow moves opposite. Reach both exits simultaneously!',
+                icon: '🪞',
+                status: 'complete',
+                statusLabel: 'Complete',
+                technologies: ['Game Logic', 'Dual Boards', 'Progressive Levels', 'Keyboard Controls'],
+                url: './tools/mirror-maze/'
             }
         ],
 

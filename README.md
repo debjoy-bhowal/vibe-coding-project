@@ -1,4 +1,4 @@
-# 🚀 Vibe Coding Competition - Mini Tools Collection
+# 🚀 Vibe Coding Competition - Tools & Games Collection
 
 [![Built with AI](https://img.shields.io/badge/Built%20with-AI%20Coding%20Tools-purple?style=for-the-badge)](https://github.com/debjoy-bhowal/vibe-coding-project)
 [![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/HTML)
@@ -11,13 +11,13 @@
 
 **🚀 [View Live Website](https://debjoy-bhowal.github.io/vibe-coding-project/)** 
 
-> Try out all the tools instantly! No installation required - just click the link above to explore the complete collection of mini-tools in your browser.
+> Try out all the tools and games instantly! No installation required - just click the link above to explore the complete collection of web applications in your browser.
 > 
-> A collection of mini web tools and projects built entirely using AI coding assistance for the Vibe Coding Competition. Each page showcases a different utility or interactive tool, demonstrating the power of AI-assisted development.
+> A collection of web tools and interactive games built entirely using AI coding assistance for the Vibe Coding Competition. Each creation showcases different utilities and entertainment experiences, demonstrating the versatility of AI-assisted development.
 
 ## 🎯 Project Overview
 
-This project is a showcase of multiple mini-tools and utilities built within the timeframe of the Vibe Coding Competition. Each tool is crafted using AI coding assistance, highlighting how artificial intelligence can accelerate development and enable rapid prototyping of useful web applications.
+This project is a showcase of multiple web applications - from productivity tools to engaging games - built within the timeframe of the Vibe Coding Competition. Each creation is crafted using AI coding assistance, highlighting how artificial intelligence can accelerate development across diverse application types, from utilities to interactive entertainment.
 
 ### 🛠️ Tech Stack
 
@@ -26,16 +26,16 @@ This project is a showcase of multiple mini-tools and utilities built within the
 - **JavaScript Framework**: Alpine.js for reactive components
 - **Development Approach**: AI-first coding with tools like GitHub Copilot, ChatGPT, Claude, etc.
 
-## 📚 Mini Tools Collection
+## 📚 Collection Overview
 
-> **Note**: This list will be updated as new tools are added during the competition timeframe.
+> **Note**: This list will be updated as new tools and games are added during the competition timeframe.
 
 ### 🏠 Main Hub
 - **File**: `index.html`
-- **Description**: Central navigation hub showcasing all available mini-tools
-- **Features**: Responsive grid layout, tool previews, direct navigation
+- **Description**: Central navigation hub showcasing all available applications
+- **Features**: Responsive grid layout, search & filtering, direct navigation
 
-### 🔧 Available Tools
+### 🔧 Productivity Tools
 
 | Tool | Description | Status | Tech Focus |
 |------|-------------|--------|------------|
@@ -51,7 +51,13 @@ This project is a showcase of multiple mini-tools and utilities built within the
 | ⌨️ **Typing Speed Tester** | Test and improve typing speed with real-time analytics | ✅ Complete | Performance Metrics & Real-time Feedback |
 | 🎨 **Pixel Art Maker** | Create pixel art with interactive canvas and export features | ✅ Complete | Canvas API & Interactive Drawing |
 
-### 🎯 Tool Features
+### � Interactive Games
+
+| Game | Description | Status | Tech Focus |
+|------|-------------|--------|------------|
+| 🪞 **Mirror Maze** | Dual-board puzzle where your shadow moves opposite - reach both exits! | ✅ Complete | Game Logic, Dual Boards & Progressive Levels |
+
+### 🎯 Application Features
 
 #### 🧮 Calculator Pro
 - Scientific and basic calculations
@@ -141,6 +147,16 @@ This project is a showcase of multiple mini-tools and utilities built within the
 - **Statistics Tracking**: Real-time pixel count, color usage, and progress analytics
 - **Mobile Responsive**: Optimized interface for both desktop and mobile devices
 
+#### 🪞 Mirror Maze
+- **Dual-Board Gameplay**: Control avatars in two synchronized worlds with mirror movement mechanics
+- **Progressive Levels**: 8 challenging levels with increasing complexity and new game elements
+- **Smart Movement System**: Independent avatar movement when paths allow, realistic mirror physics (left-right only)
+- **Interactive Elements**: Switches, doors, traps, and exits create engaging puzzle scenarios
+- **Game Features**: Level-based timer, move counter, completion celebration, and progress tracking
+- **Keyboard Controls**: Full WASD and arrow key support with responsive touch controls
+- **Level Management**: Always-accessible level selection, progress saving, and hint system
+- **Advanced Mechanics**: Door trapping system, victory animations, and localStorage progress persistence
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -166,10 +182,10 @@ This project is a showcase of multiple mini-tools and utilities built within the
    npx serve .
    ```
 
-3. **Navigate to tools**
+3. **Navigate to applications**
    - Visit `http://localhost:8000` (if using local server)
    - Or simply open `index.html` in your browser
-   - Click on any tool card to explore!
+   - Click on any tool or game card to explore!
 
 ## 📁 Project Structure
 
@@ -184,7 +200,7 @@ vibe-coding-project/
 │   │   ├── main.js           # Global JavaScript
 │   │   └── utils.js          # Helper functions
 │   └── images/
-│       └── icons/            # Tool icons and images
+│       └── icons/            # Application icons and images
 ├── tools/
 │   ├── calculator/
 │   │   ├── index.html
@@ -194,7 +210,9 @@ vibe-coding-project/
 │   │   ├── index.html
 │   │   ├── script.js
 │   │   └── style.css
-│   └── [other-tools]/
+│   ├── mirror-maze/          # Interactive puzzle game
+│   │   └── index.html        # Complete game implementation
+│   └── [other-applications]/
 ├── components/
 │   ├── header.html           # Reusable header
 │   ├── footer.html           # Reusable footer
@@ -207,14 +225,16 @@ vibe-coding-project/
 ### UI/UX Principles
 - **Mobile-First**: Responsive design for all screen sizes
 - **Clean & Minimal**: Focus on functionality over complexity
-- **Consistent**: Unified design language across all tools
+- **Consistent**: Unified design language across all applications
 - **Accessible**: WCAG compliant for inclusive design
+- **Engaging**: Interactive elements that provide immediate feedback
 
 ### Development Approach
 - **AI-Assisted**: Leveraging AI tools for rapid development
 - **Vanilla-First**: Minimal dependencies, maximum performance
 - **Component-Based**: Reusable components for consistency
 - **Progressive Enhancement**: Works without JavaScript, better with it
+- **Game-Ready**: Scalable architecture supporting both tools and games
 
 ## 🤖 AI Tools Used
 
@@ -229,35 +249,36 @@ This project showcases the power of AI-assisted development using:
 
 - ✅ **Speed**: Rapid development using AI assistance
 - ✅ **Quality**: Clean, maintainable code
-- ✅ **Functionality**: Actually useful tools
+- ✅ **Functionality**: Actually useful tools and engaging games
 - ✅ **Innovation**: Creative use of AI in development
 - ✅ **Documentation**: Clear project structure and README
 
-## 🎯 How to Add New Tools
+## 🎯 How to Add New Applications
 
-1. **Create tool directory**
+1. **Create application directory**
    ```bash
-   mkdir tools/your-tool-name
-   cd tools/your-tool-name
+   mkdir tools/your-app-name
+   cd tools/your-app-name
    ```
 
 2. **Use the template structure**
    ```
-   your-tool-name/
-   ├── index.html    # Tool interface
-   ├── script.js     # Tool logic
-   └── style.css     # Tool-specific styles
+   your-app-name/
+   ├── index.html    # Application interface
+   ├── script.js     # Application logic (optional)
+   └── style.css     # Application-specific styles (optional)
    ```
 
 3. **Update main hub**
-   - Add tool card to `index.html`
+   - Add application card to `assets/js/main.js`
    - Update navigation links
-   - Add tool description
+   - Add application description
 
 4. **Follow conventions**
    - Use Tailwind CSS classes
    - Implement Alpine.js for interactivity
    - Ensure mobile responsiveness
+   - Consider both tool and game design patterns
 
 ## 🤝 Contributing
 

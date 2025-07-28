@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vibe Coding - Mini Tools Collection</title>
-    <meta name="description" content="A collection of AI-powered mini web tools built for the Vibe Coding Competition">
+    <title>Vibe Coding - Tools & Games Collection</title>
+    <meta name="description" content="A collection of AI-powered web tools and interactive games built for the Vibe Coding Competition">
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -47,7 +47,7 @@
                     </svg>
                 </div>
                 <ul tabindex="0" class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
-                    <li><a href="#tools">Tools</a></li>
+                    <li><a href="#tools">Tools & Games</a></li>
                     <li><a href="#about">About</a></li>
                 </ul>
             </div>
@@ -58,13 +58,13 @@
         </div>
         <div class="navbar-center hidden lg:flex">
             <ul class="menu menu-horizontal px-1">
-                <li><a href="#tools" class="hover:text-primary">Tools</a></li>
+                <li><a href="#tools" class="hover:text-primary">Tools & Games</a></li>
                 <li><a href="#about" class="hover:text-primary">About</a></li>
             </ul>
         </div>
         <div class="navbar-end">
             <div class="badge badge-primary badge-outline">
-                <span x-text="completedTools"></span> Tools Built
+                <span x-text="completedTools"></span> Tools & Games Built
             </div>
         </div>
     </nav>
@@ -80,16 +80,16 @@
                     </div>
                 </div>
                 <h1 class="text-5xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-6">
-                    Mini Tools Collection
+                    Tools & Games Collection
                 </h1>
                 <p class="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-                    A showcase of AI-powered web tools built for the Vibe Coding Competition. 
-                    Each tool demonstrates rapid development using modern AI coding assistance.
+                    A showcase of AI-powered web tools and interactive games built for the Vibe Coding Competition. 
+                    Each creation demonstrates rapid development using modern AI coding assistance, from productivity tools to engaging puzzles.
                 </p>
                 <div class="flex flex-wrap justify-center gap-4">
                     <a href="#tools" class="btn btn-primary btn-lg gap-2">
-                        <i class="fas fa-tools"></i>
-                        Explore Tools
+                        <i class="fas fa-rocket"></i>
+                        Explore Collection
                     </a>
                     <a href="https://github.com/yourusername/vibe-coding-project" 
                        class="btn btn-outline btn-lg gap-2" target="_blank">
@@ -112,15 +112,15 @@
     <section id="tools" class="py-16 px-4">
         <div class="container mx-auto max-w-7xl">
             <div class="text-center mb-12">
-                <h2 class="text-4xl font-bold text-gray-800 mb-4">Available Tools</h2>
-                <p class="text-gray-600 text-lg">Click on any tool to explore its functionality</p>
+                <h2 class="text-4xl font-bold text-gray-800 mb-4">Tools & Games Collection</h2>
+                <p class="text-gray-600 text-lg">Click on any item to explore its functionality</p>
             </div>
 
             <!-- Filter/Search Bar -->
             <div class="flex flex-col md:flex-row gap-4 mb-8 justify-center">
                 <div class="form-control">
                     <input type="text" 
-                           placeholder="Search tools..." 
+                           placeholder="Search tools and games..." 
                            class="input input-bordered input-primary w-full md:w-80"
                            x-model="searchTerm">
                 </div>
@@ -160,7 +160,7 @@
                                 <button class="btn btn-primary btn-sm" 
                                         :disabled="tool.status === 'planned'"
                                         @click="openTool(tool)">
-                                    <span x-text="tool.status === 'planned' ? 'Coming Soon' : 'Open Tool'"></span>
+                                    <span x-text="tool.status === 'planned' ? 'Coming Soon' : 'Launch'"></span>
                                 </button>
                             </div>
                         </div>
@@ -184,7 +184,7 @@
                         <i class="fas fa-robot text-2xl text-purple-600"></i>
                     </div>
                     <h3 class="text-xl font-bold mb-2">AI-Powered</h3>
-                    <p class="text-gray-600">Every tool built using cutting-edge AI coding assistance for rapid development</p>
+                    <p class="text-gray-600">Every tool and game built using cutting-edge AI coding assistance for rapid development</p>
                 </div>
                 <div class="text-center">
                     <div class="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -195,10 +195,10 @@
                 </div>
                 <div class="text-center">
                     <div class="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-mobile-alt text-2xl text-green-600"></i>
+                        <i class="fas fa-gamepad text-2xl text-green-600"></i>
                     </div>
-                    <h3 class="text-xl font-bold mb-2">Responsive</h3>
-                    <p class="text-gray-600">Fully responsive design that works perfectly on all devices and screen sizes</p>
+                    <h3 class="text-xl font-bold mb-2">Interactive Experience</h3>
+                    <p class="text-gray-600">From productivity tools to puzzle games, each creation offers engaging and intuitive interactions</p>
                 </div>
             </div>
         </div>
@@ -208,7 +208,7 @@
     <footer class="footer footer-center p-10 bg-base-200 text-base-content rounded">
         <div class="grid grid-flow-col gap-4">
             <a href="#about" class="link link-hover">About</a>
-            <a href="#tools" class="link link-hover">Tools</a>
+            <a href="#tools" class="link link-hover">Tools & Games</a>
             <a href="https://github.com/yourusername/vibe-coding-project" class="link link-hover">GitHub</a>
         </div>
         <div>
