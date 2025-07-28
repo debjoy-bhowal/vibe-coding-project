@@ -3,10 +3,12 @@ function hubApp() {
     return {
         searchTerm: '',
         filterStatus: 'all',
-        completedTools: 14,
+        filterCategory: 'all',
+        completedTools: 15,
         
         // Sample tools data - will be updated as real tools are built
         tools: [
+            // Productivity Tools
             {
                 id: 'calculator',
                 name: 'Calculator Pro',
@@ -14,6 +16,7 @@ function hubApp() {
                 icon: '🧮',
                 status: 'complete',
                 statusLabel: 'Complete',
+                category: 'tools',
                 technologies: ['JavaScript', 'CSS Grid', 'Local Storage'],
                 url: './tools/calculator/'
             },
@@ -24,6 +27,7 @@ function hubApp() {
                 icon: '🎨',
                 status: 'complete',
                 statusLabel: 'Complete',
+                category: 'tools',
                 technologies: ['Canvas API', 'Color Theory', 'Export'],
                 url: './tools/color-generator/'
             },
@@ -34,6 +38,7 @@ function hubApp() {
                 icon: '📝',
                 status: 'complete',
                 statusLabel: 'Complete',
+                category: 'tools',
                 technologies: ['Markdown Parser', 'Live Preview', 'Export'],
                 url: './tools/markdown-preview/'
             },
@@ -44,6 +49,7 @@ function hubApp() {
                 icon: '🌦️',
                 status: 'complete',
                 statusLabel: 'Complete',
+                category: 'tools',
                 technologies: ['Chart.js', 'Geolocation', 'Local Storage'],
                 url: './tools/weather-dashboard/'
             },
@@ -54,6 +60,7 @@ function hubApp() {
                 icon: '📊',
                 status: 'complete',
                 statusLabel: 'Complete',
+                category: 'tools',
                 technologies: ['Chart.js', 'CSV Parser', 'JSON Import', 'Interactive'],
                 url: './tools/data-visualizer/'
             },
@@ -64,6 +71,7 @@ function hubApp() {
                 icon: '🔐',
                 status: 'complete',
                 statusLabel: 'Complete',
+                category: 'tools',
                 technologies: ['Crypto API', 'Security', 'Analytics'],
                 url: './tools/password-generator/'
             },
@@ -74,6 +82,7 @@ function hubApp() {
                 icon: '📱',
                 status: 'complete',
                 statusLabel: 'Complete',
+                category: 'tools',
                 technologies: ['QR Library', 'Download', 'Customization'],
                 url: './tools/qr-generator/'
             },
@@ -84,6 +93,7 @@ function hubApp() {
                 icon: '🎵',
                 status: 'complete',
                 statusLabel: 'Complete',
+                category: 'tools',
                 technologies: ['Web Audio API', 'Playlist', 'Controls'],
                 url: './tools/music-player/'
             },
@@ -94,6 +104,7 @@ function hubApp() {
                 icon: '📷',
                 status: 'complete',
                 statusLabel: 'Complete',
+                category: 'tools',
                 technologies: ['Canvas API', 'Image Processing', 'Filters'],
                 url: './tools/image-filter/'
             },
@@ -104,6 +115,7 @@ function hubApp() {
                 icon: '🎯',
                 status: 'complete',
                 statusLabel: 'Complete',
+                category: 'tools',
                 technologies: ['Notifications', 'Audio', 'Sessions'],
                 url: './tools/pomodoro-timer/'
             },
@@ -114,6 +126,7 @@ function hubApp() {
                 icon: '⌨️',
                 status: 'complete',
                 statusLabel: 'Complete',
+                category: 'tools',
                 technologies: ['Real-time Stats', 'Performance Analytics', 'Local Storage'],
                 url: './tools/typing-speed-tester/'
             },
@@ -124,9 +137,11 @@ function hubApp() {
                 icon: '🎨',
                 status: 'complete',
                 statusLabel: 'Complete',
+                category: 'tools',
                 technologies: ['Canvas API', 'Interactive Drawing', 'PNG Export', 'CSS Generation'],
                 url: './tools/pixel-art-maker/'
             },
+            // Interactive Games
             {
                 id: 'mirror-maze',
                 name: 'Mirror Maze',
@@ -134,6 +149,7 @@ function hubApp() {
                 icon: '🪞',
                 status: 'complete',
                 statusLabel: 'Complete',
+                category: 'games',
                 technologies: ['Game Logic', 'Dual Boards', 'Progressive Levels', 'Keyboard Controls'],
                 url: './tools/mirror-maze/'
             },
@@ -144,14 +160,77 @@ function hubApp() {
                 icon: '🪐',
                 status: 'complete',
                 statusLabel: 'Complete',
+                category: 'games',
                 technologies: ['Physics Simulation', 'Orbital Mechanics', 'Gravity Control', 'Real-time Rendering'],
                 url: './tools/tiny-planet-simulator/'
+            },
+            {
+                id: 'sky-runner',
+                name: 'Sky Runner',
+                description: 'Endless flying adventure with powerups, weather effects, and beautiful parallax backgrounds!',
+                icon: '🌤️',
+                status: 'complete',
+                statusLabel: 'Complete',
+                category: 'games',
+                technologies: ['Endless Runner', 'Physics Engine', 'Powerup System', 'Dynamic Weather'],
+                url: './tools/sky-runner/'
             }
         ],
 
         // Computed property for filtered tools
         get filteredTools() {
             let filtered = this.tools;
+
+            // Filter by search term
+            if (this.searchTerm) {
+                filtered = filtered.filter(tool => 
+                    tool.name.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+                    tool.description.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+                    tool.technologies.some(tech => 
+                        tech.toLowerCase().includes(this.searchTerm.toLowerCase())
+                    )
+                );
+            }
+
+            // Filter by status
+            if (this.filterStatus !== 'all') {
+                filtered = filtered.filter(tool => tool.status === this.filterStatus);
+            }
+
+            // Filter by category
+            if (this.filterCategory !== 'all') {
+                filtered = filtered.filter(tool => tool.category === this.filterCategory);
+            }
+
+            return filtered;
+        },
+
+        // Computed property for filtered productivity tools
+        get filteredProductivityTools() {
+            let filtered = this.tools.filter(tool => tool.category === 'tools');
+
+            // Filter by search term
+            if (this.searchTerm) {
+                filtered = filtered.filter(tool => 
+                    tool.name.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+                    tool.description.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+                    tool.technologies.some(tech => 
+                        tech.toLowerCase().includes(this.searchTerm.toLowerCase())
+                    )
+                );
+            }
+
+            // Filter by status
+            if (this.filterStatus !== 'all') {
+                filtered = filtered.filter(tool => tool.status === this.filterStatus);
+            }
+
+            return filtered;
+        },
+
+        // Computed property for filtered games
+        get filteredGames() {
+            let filtered = this.tools.filter(tool => tool.category === 'games');
 
             // Filter by search term
             if (this.searchTerm) {

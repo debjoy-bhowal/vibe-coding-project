@@ -1,6 +1,10 @@
-# 🚀 Vibe Coding Competition - Tools & Games Collection
+# 🚀 Vibe Coding Competition - Tools & Games Collecti### 🎮 Interactive Games
 
-[![Built with AI](https://img.shields.io/badge/Built%20with-AI%20Coding%20Tools-purple?style=for-the-badge)](https://github.com/debjoy-bhowal/vibe-coding-project)
+| Game | Description | Status | Tech Focus |
+|------|-------------|--------|------------|
+| 🪞 **Mirror Maze** | Dual-board puzzle where your shadow moves opposite - reach both exits! | ✅ Complete | Game Logic, Dual Boards & Progressive Levels |
+| 🪐 **Tiny Planet Simulator** | Interactive orbital mechanics game - control gravity to slingshot planets into targets! | ✅ Complete | Physics Simulation, Orbital Mechanics & Real-time Rendering |
+| 🌤️ **Sky Runner** | Endless flying adventure with powerups, weather effects, and beautiful parallax backgrounds! | ✅ Complete | Endless Runner, Physics Engine & Dynamic Weather |![Built with AI](https://img.shields.io/badge/Built%20with-AI%20Coding%20Tools-purple?style=for-the-badge)](https://github.com/debjoy-bhowal/vibe-coding-project)
 [![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/HTML)
 [![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/CSS)
 [![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
@@ -167,6 +171,17 @@ This project is a showcase of multiple web applications - from productivity tool
 - **Visual Effects**: Glowing celestial bodies, particle starfield, gravity field visualization
 - **Performance Optimized**: 60fps smooth animation with efficient collision detection
 - **Game Progression**: Score system, time tracking, completion bonuses, and level generation
+
+#### 🌤️ Sky Runner
+- **Endless Flying Mechanics**: Flappy Bird-style controls with gravity physics and smooth flight dynamics
+- **Dynamic Weather System**: Three time periods (day, sunset, night) with weather effects like rain storms
+- **Powerup System**: Time freeze, shrink ability, and double jump with strategic timing mechanics
+- **Beautiful Parallax Backgrounds**: Multi-layered cloud movements with twinkling stars and gradient transitions
+- **Obstacle Variety**: Clouds, birds, lightning, and wind gusts with unique movement patterns
+- **Progressive Difficulty**: Increasing game speed, obstacle density, and environmental complexity
+- **Visual Effects**: Smooth CSS animations, particle systems, and responsive UI feedback
+- **Performance Optimized**: 60fps rendering with efficient collision detection and object management
+- **Persistent High Scores**: Local storage for best score tracking and achievement comparison
 
 ## 🚀 Quick Start
 
