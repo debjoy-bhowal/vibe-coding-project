@@ -349,22 +349,78 @@
                 </div>
 
                 <!-- Game Options -->
-                <div class="flex flex-wrap items-center justify-between gap-4 mt-4 pt-4 border-t border-white/20">
-                    <div class="flex items-center gap-4">
-                        <label x-show="currentLevel === 1" class="flex items-center gap-2 text-white cursor-pointer">
-                            <input type="checkbox" x-model="showTrajectory" class="checkbox checkbox-primary">
-                            <span class="text-sm">Show Trajectory</span>
-                        </label>
-                        <div class="text-sm text-gray-300">
-                            Level: <span x-text="currentLevel"></span> / ∞
+                <div class="flex flex-col gap-4 mt-4 pt-4 border-t border-white/20">
+                    <!-- Top row: Trajectory and Level info -->
+                    <div class="flex flex-wrap items-center justify-between gap-4">
+                        <div class="flex items-center gap-4">
+                            <label x-show="currentLevel === 1" class="flex items-center gap-2 text-white cursor-pointer">
+                                <input type="checkbox" x-model="showTrajectory" class="checkbox checkbox-primary">
+                                <span class="text-sm">Show Trajectory</span>
+                            </label>
+                            <div class="text-sm text-gray-300">
+                                Level: <span x-text="currentLevel"></span> / ∞
+                                <span class="ml-2 opacity-70" x-text="`(Seed: ${gameSeed})`"></span>
+                            </div>
                         </div>
                     </div>
-                    <div class="flex gap-2">
-                        <button @click="resetLevel()" class="btn btn-outline btn-sm text-white">
-                            <i class="fas fa-redo mr-1"></i>Reset Level
+                    
+                    <!-- Custom Seed Input (when visible) -->
+                    <div x-show="showSeedInput" 
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 transform scale-95"
+                         x-transition:enter-end="opacity-100 transform scale-100"
+                         x-transition:leave="transition ease-in duration-150"
+                         x-transition:leave-start="opacity-100 transform scale-100"
+                         x-transition:leave-end="opacity-0 transform scale-95"
+                         class="bg-white/5 rounded-lg p-4 border border-white/20">
+                        <div class="flex flex-col gap-3">
+                            <label class="text-white text-sm font-semibold">
+                                <i class="fas fa-dice mr-2"></i>Custom Seed (1-999999)
+                            </label>
+                            <div class="flex flex-col sm:flex-row gap-2">
+                                <input type="text" 
+                                       x-model="customSeedInput"
+                                       placeholder="Enter seed number..."
+                                       class="input input-bordered flex-1 text-black"
+                                       maxlength="6"
+                                       @keyup.enter="applyCustomSeed()"
+                                       @keyup.escape="cancelSeedInput()">
+                                <div class="flex gap-2">
+                                    <button @click="applyCustomSeed()" class="btn btn-success btn-sm">
+                                        <i class="fas fa-check mr-1"></i>Apply
+                                    </button>
+                                    <button @click="cancelSeedInput()" class="btn btn-ghost btn-sm text-white">
+                                        <i class="fas fa-times mr-1"></i>Cancel
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="text-xs text-gray-400">
+                                Enter a number between 1 and 999999 to generate consistent level layouts
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Bottom row: Action buttons (responsive) -->
+                    <div class="flex flex-wrap gap-2">
+                        <button @click="resetLevel()" class="btn btn-outline btn-sm text-white flex-shrink-0">
+                            <i class="fas fa-redo mr-1"></i>
+                            <span class="hidden sm:inline">Reset Level</span>
+                            <span class="sm:hidden">Reset</span>
                         </button>
-                        <button @click="skipLevel()" class="btn btn-ghost btn-sm text-white">
-                            <i class="fas fa-forward mr-1"></i>Skip Level
+                        <button @click="skipLevel()" class="btn btn-ghost btn-sm text-white flex-shrink-0">
+                            <i class="fas fa-forward mr-1"></i>
+                            <span class="hidden sm:inline">Skip Level</span>
+                            <span class="sm:hidden">Skip</span>
+                        </button>
+                        <button @click="newGameSeed()" class="btn btn-secondary btn-sm text-white flex-shrink-0" title="Generate new layouts">
+                            <i class="fas fa-dice mr-1"></i>
+                            <span class="hidden sm:inline">New Seed</span>
+                            <span class="sm:hidden">Random</span>
+                        </button>
+                        <button @click="toggleSeedInput()" class="btn btn-info btn-sm text-white flex-shrink-0" title="Set custom seed">
+                            <i class="fas fa-cog mr-1"></i>
+                            <span class="hidden sm:inline">Custom Seed</span>
+                            <span class="sm:hidden">Custom</span>
                         </button>
                     </div>
                 </div>
@@ -502,6 +558,16 @@
                             <li>• Practice makes perfect - trajectory help disappears after level 1!</li>
                         </ul>
                     </div>
+                    
+                    <div>
+                        <h3 class="font-bold text-lg mb-2">🎲 Seed System</h3>
+                        <ul class="text-gray-600 space-y-1">
+                            <li>• <strong>Random Seed</strong>: Each game session has unique level layouts</li>
+                            <li>• <strong>New Seed</strong>: Generate fresh layouts for variety</li>
+                            <li>• <strong>Custom Seed</strong>: Set specific seed (1-999999) for consistent layouts</li>
+                            <li>• <strong>Share Seeds</strong>: Use same seed number to play identical levels with friends</li>
+                        </ul>
+                    </div>
                 </div>
                 
                 <div class="flex gap-4 mt-6">
@@ -526,6 +592,13 @@
                 levelComplete: false,
                 gameOver: false,
                 showInstructions: false,
+                
+                // Random seed for level generation (set on page load)
+                gameSeed: Math.floor(Math.random() * 1000000),
+                
+                // Custom seed input
+                customSeedInput: '',
+                showSeedInput: false,
                 
                 // Game area dimensions (5:2 aspect ratio)
                 gameAreaWidth: 800,
@@ -565,6 +638,9 @@
                 
                 init() {
                     this.loadHighScore();
+                    
+                    // Log the game seed for debugging
+                    console.log(`Game initialized with seed: ${this.gameSeed}`);
                     
                     // Ensure proper initialization order
                     this.$nextTick(() => {
@@ -637,8 +713,8 @@
                     const windRange = this.calculateWindRange(levelNum);
                     const description = this.generateLevelDescription(levelNum, obstacles, windRange);
                     
-                    // Use level number as seed for consistent generation
-                    const seed = levelNum * 123456789;
+                    // Use game seed combined with level number for consistent but randomized generation
+                    const seed = this.gameSeed + (levelNum * 123456789);
                     const rng = this.seededRandom(seed);
                     
                     // Generate target position (right side of screen, ensuring it's fully visible)
@@ -1017,7 +1093,7 @@
                     
                     // Debug: Log obstacles for levels with multiple obstacles
                     if (this.level.obstacles.length > 1) {
-                        console.log(`Level ${this.currentLevel} obstacles:`, this.obstacles.map(obs => ({
+                        console.log(`Level ${this.currentLevel} (seed: ${this.gameSeed + (this.currentLevel * 123456789)}) obstacles:`, this.obstacles.map(obs => ({
                             id: obs.id,
                             x: obs.x,
                             y: obs.y,
@@ -1276,6 +1352,53 @@
                     this.currentLevel = 1;
                     this.score = 0;
                     this.resetLevel();
+                },
+                
+                // Generate new seed and restart the game with different layouts
+                newGameSeed() {
+                    this.gameSeed = Math.floor(Math.random() * 1000000);
+                    console.log(`New game seed generated: ${this.gameSeed}`);
+                    this.currentLevel = 1;
+                    this.score = 0;
+                    this.resetLevel();
+                },
+                
+                // Toggle custom seed input visibility
+                toggleSeedInput() {
+                    this.showSeedInput = !this.showSeedInput;
+                    if (this.showSeedInput) {
+                        this.customSeedInput = this.gameSeed.toString();
+                    }
+                },
+                
+                // Apply custom seed with validation
+                applyCustomSeed() {
+                    const seedValue = this.customSeedInput.trim();
+                    
+                    // Validation: must be a number between 1 and 999999
+                    if (!/^\d+$/.test(seedValue)) {
+                        alert('Seed must be a positive number (digits only)');
+                        return;
+                    }
+                    
+                    const numericSeed = parseInt(seedValue);
+                    if (numericSeed < 1 || numericSeed > 999999) {
+                        alert('Seed must be between 1 and 999999');
+                        return;
+                    }
+                    
+                    this.gameSeed = numericSeed;
+                    this.showSeedInput = false;
+                    console.log(`Custom seed applied: ${this.gameSeed}`);
+                    this.currentLevel = 1;
+                    this.score = 0;
+                    this.resetLevel();
+                },
+                
+                // Cancel custom seed input
+                cancelSeedInput() {
+                    this.showSeedInput = false;
+                    this.customSeedInput = '';
                 }
             }
         }
