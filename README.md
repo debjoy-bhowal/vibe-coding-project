@@ -60,6 +60,7 @@ This project is a showcase of multiple web applications - from productivity tool
 | 🌤️ **Sky Runner** | Endless flying adventure with powerups, weather effects, and beautiful parallax backgrounds! | ✅ Complete | Endless Runner, Physics Engine & Dynamic Weather |
 | 🚀 **Space Shooter** | Retro-style space combat! Fight waves of enemies, collect powerups, and survive as long as possible! | ✅ Complete | Arcade Combat, Wave System & Powerup Collection |
 | 🧱 **Breakout Arena** | Classic Breakout with modern twists - power-ups, moving bricks, and multi-ball action! | ✅ Complete | Physics Engine, Power-up System & Multi-ball |
+| 🎯 **Projectile Puzzle** | Physics-based projectile puzzle - aim and fire to hit targets with limited attempts! | ✅ Complete | Physics Simulation, Ballistic Trajectory & Collision Detection |
 
 ### 🎯 Application Features
 
@@ -204,6 +205,18 @@ This project is a showcase of multiple web applications - from productivity tool
 - **Physics Engine**: Realistic ball physics with paddle spin control and velocity management
 - **Visual Effects**: Particle systems, ball trails, score popups, and smooth animations
 - **High Score Persistence**: Local storage for best score tracking across game sessions
+
+#### 🎯 Projectile Puzzle
+- **Physics-Based Ballistics**: Realistic projectile motion with gravity and wind effects
+- **Strategic Aiming**: Adjustable angle (5° - 85°) and power (10% - 100%) controls
+- **Environmental Challenges**: Wind effects that influence projectile trajectory
+- **Obstacle Navigation**: Red barrier blocks that require strategic shot planning
+- **Limited Attempts**: Careful aim required with restricted shots per level
+- **10 Progressive Levels**: Increasing difficulty with complex obstacle courses
+- **Trajectory Preview**: Optional path visualization for strategic planning
+- **Scoring System**: Points for completion efficiency and unused attempts
+- **Collision Detection**: Precise hit detection for targets and obstacles
+- **Visual Effects**: Explosion animations, smooth projectile motion, and particle systems
 
 ## 🚀 Quick Start
 

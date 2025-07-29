@@ -4,7 +4,7 @@ function hubApp() {
         searchTerm: '',
         filterStatus: 'all',
         filterCategory: 'all',
-        completedTools: 17,
+        completedTools: 18,
         
         // Sample tools data - will be updated as real tools are built
         tools: [
@@ -196,6 +196,17 @@ function hubApp() {
                 category: 'games',
                 technologies: ['Physics Engine', 'Power-up System', 'Multi-ball', 'Combo System'],
                 url: './tools/breakout/'
+            },
+            {
+                id: 'projectile-puzzle',
+                name: 'Projectile Puzzle',
+                description: 'Physics-based projectile puzzle - aim and fire to hit targets with limited attempts!',
+                icon: '🎯',
+                status: 'complete',
+                statusLabel: 'Complete',
+                category: 'games',
+                technologies: ['Physics Simulation', 'Ballistic Trajectory', 'Collision Detection', 'Wind Effects'],
+                url: './tools/projectile-puzzle/'
             }
         ],
 

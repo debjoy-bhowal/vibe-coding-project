@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projectile Puzzle - Vibe Coding</title>
+    <meta name="description" content="Physics-based projectile puzzle - aim and fire to hit the target with limited attempts!">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- DaisyUI -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@3.9.4/dist/full.css" rel="stylesheet" type="text/css" />
+    
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#8B5CF6',
+                        secondary: '#06B6D4',
+                        accent: '#F59E0B',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        .game-area {
+            background: linear-gradient(to bottom, #87CEEB 0%, #87CEEB 60%, #90EE90 60%, #228B22 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .projectile {
+            width: 12px;
+            height: 12px;
+            background: radial-gradient(circle, #ff6b6b, #dc2626);
+            border-radius: 50%;
+            position: absolute;
+            box-shadow: 0 0 8px rgba(255, 107, 107, 0.6);
+            z-index: 10;
+            transition: none;
+        }
+        
+        .cannon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #4a5568, #2d3748);
+            border-radius: 50%;
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            z-index: 5;
+        }
+        
+        .cannon-barrel {
+            width: 30px;
+            height: 6px;
+            background: linear-gradient(to right, #2d3748, #4a5568);
+            border-radius: 3px;
+            position: absolute;
+            transform-origin: left center;
+            left: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .target {
+            width: 40px;
+            height: 40px;
+            background: radial-gradient(circle, #10b981, #059669);
+            border: 3px solid #064e3b;
+            border-radius: 50%;
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse-target 2s ease-in-out infinite;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
+            z-index: 5;
+        }
+        
+        .target.hit {
+            background: radial-gradient(circle, #fbbf24, #f59e0b);
+            border-color: #92400e;
+            animation: target-hit 0.8s ease-out;
+            box-shadow: 0 0 25px rgba(251, 191, 36, 0.8);
+        }
+        
+        .obstacle {
+            background: linear-gradient(135deg, #7c2d12, #991b1b);
+            border: 2px solid #451a03;
+            position: absolute;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            z-index: 3;
+        }
+        
+        .trajectory-line {
+            stroke: rgba(255, 255, 255, 0.6);
+            stroke-width: 2;
+            stroke-dasharray: 5,5;
+            fill: none;
+            pointer-events: none;
+        }
+        
+        .grid-line {
+            stroke: rgba(255, 255, 255, 0.1);
+            stroke-width: 1;
+            fill: none;
+            pointer-events: none;
+        }
+        
+        .explosion {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle, #fbbf24, #f59e0b, transparent);
+            animation: explosion-expand 0.6s ease-out forwards;
+            pointer-events: none;
+            z-index: 20;
+        }
+        
+        .success-message {
+            animation: success-bounce 0.8s ease-out;
+        }
+        
+        @keyframes pulse-target {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        @keyframes target-hit {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1.1); }
+        }
+        
+        @keyframes explosion-expand {
+            0% { 
+                transform: scale(0);
+                opacity: 1;
+            }
+            100% { 
+                transform: scale(3);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes success-bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+        
+        .wind-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-weight: bold;
+            text-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+        
+        .level-complete-overlay {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900" x-data="projectilePuzzle()">
+    
+    <!-- Header -->
+    <header class="bg-black/80 backdrop-blur-md shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <a href="../../" class="btn btn-ghost btn-sm text-white hover:text-gray-200">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        <span class="hidden md:inline">Back to Hub</span>
+                    </a>
+                    <div class="flex items-center space-x-2">
+                        <div class="text-2xl md:text-3xl">🎯</div>
+                        <div>
+                            <h1 class="text-lg md:text-2xl font-bold text-white">
+                                Projectile Puzzle
+                            </h1>
+                            <p class="text-xs md:text-sm text-gray-300 hidden sm:block">Aim, fire, and hit the target with physics!</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button @click="showInstructions = true" class="btn btn-ghost btn-sm text-white">
+                        <i class="fas fa-question-circle"></i>
+                        <span class="hidden md:inline">Help</span>
+                    </button>
+                    <button @click="resetLevel()" class="btn btn-outline btn-sm text-white">
+                        <i class="fas fa-redo"></i>
+                        <span class="hidden md:inline">Reset</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Game Stats -->
+    <div class="container mx-auto px-4 py-4">
+        <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
+            <div class="bg-white/10 backdrop-blur-md rounded-lg p-3 text-center">
+                <div class="text-xl font-bold text-blue-400" x-text="currentLevel"></div>
+                <div class="text-xs text-gray-300">Level</div>
+            </div>
+            <div class="bg-white/10 backdrop-blur-md rounded-lg p-3 text-center">
+                <div class="text-xl font-bold text-red-400" x-text="attemptsLeft"></div>
+                <div class="text-xs text-gray-300">Attempts</div>
+            </div>
+            <div class="bg-white/10 backdrop-blur-md rounded-lg p-3 text-center">
+                <div class="text-xl font-bold text-yellow-400" x-text="score"></div>
+                <div class="text-xs text-gray-300">Score</div>
+            </div>
+            <div class="bg-white/10 backdrop-blur-md rounded-lg p-3 text-center">
+                <div class="text-xl font-bold text-green-400" x-text="Math.round(angle)"></div>
+                <div class="text-xs text-gray-300">Angle°</div>
+            </div>
+            <div class="bg-white/10 backdrop-blur-md rounded-lg p-3 text-center">
+                <div class="text-xl font-bold text-purple-400" x-text="Math.round(power)"></div>
+                <div class="text-xs text-gray-300">Power%</div>
+            </div>
+            <div class="bg-white/10 backdrop-blur-md rounded-lg p-3 text-center">
+                <div class="text-xl font-bold text-cyan-400" x-text="highScore"></div>
+                <div class="text-xs text-gray-300">Best</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Area -->
+    <div class="container mx-auto px-2 pb-8">
+        <div class="relative">
+            <!-- Game Canvas -->
+            <div 
+                class="game-area w-full rounded-lg relative border-2 border-white/20"
+                :style="`height: ${gameAreaHeight}px;`"
+                x-ref="gameArea"
+            >
+                <!-- Wind Indicator -->
+                <div class="wind-indicator" x-show="wind !== 0">
+                    <div class="flex items-center gap-2">
+                        <i :class="wind > 0 ? 'fas fa-arrow-right' : 'fas fa-arrow-left'" class="text-cyan-400"></i>
+                        <span x-text="`Wind: ${Math.abs(wind).toFixed(1)}`" class="text-white"></span>
+                    </div>
+                </div>
+
+                <!-- Grid SVG -->
+                <svg class="absolute inset-0 w-full h-full pointer-events-none" x-ref="grid">
+                    <!-- Grid lines -->
+                    <defs>
+                        <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
+                            <path d="M 50 0 L 0 0 0 50" class="grid-line"/>
+                        </pattern>
+                    </defs>
+                    <rect width="100%" height="100%" fill="url(#grid)" opacity="0.3"/>
+                    
+                    <!-- Trajectory preview -->
+                    <path x-show="showTrajectory && !projectileFlying && currentLevel === 1" 
+                          :d="trajectoryPath" 
+                          class="trajectory-line"/>
+                </svg>
+
+                <!-- Cannon -->
+                <div class="cannon" 
+                     :style="`left: ${cannon.x - 20}px; top: ${cannon.y - 20}px;`">
+                    <div class="cannon-barrel" 
+                         :style="`transform: rotate(${-angle}deg);`"></div>
+                </div>
+
+                <!-- Projectile -->
+                <div x-show="projectileFlying" 
+                     class="projectile"
+                     :style="`left: ${projectile.x - 6}px; top: ${projectile.y - 6}px;`"></div>
+
+                <!-- Target -->
+                <div class="target" 
+                     :class="{ 'hit': targetHit }"
+                     :style="`left: ${target.x - 20}px; top: ${target.y - 20}px;`">
+                    <i class="fas fa-bullseye text-white text-lg"></i>
+                </div>
+
+                <!-- Obstacles -->
+                <template x-for="obstacle in obstacles" :key="obstacle.id">
+                    <div class="obstacle"
+                         :style="`left: ${obstacle.x}px; top: ${obstacle.y}px; width: ${obstacle.width}px; height: ${obstacle.height}px;`"
+                         x-init="console.log('Rendering obstacle:', obstacle.id, obstacle)"></div>
+                </template>
+
+                <!-- Explosions -->
+                <template x-for="explosion in explosions" :key="explosion.id">
+                    <div class="explosion"
+                         :style="`left: ${explosion.x - 25}px; top: ${explosion.y - 25}px; width: 50px; height: 50px;`"></div>
+                </template>
+            </div>
+
+            <!-- Controls Panel -->
+            <div class="mt-6 bg-white/10 backdrop-blur-md rounded-lg p-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Angle Control -->
+                    <div>
+                        <label class="block text-white font-semibold mb-2">
+                            <i class="fas fa-angle-up mr-2"></i>Launch Angle: <span x-text="`${Math.round(angle)}°`"></span>
+                        </label>
+                        <input type="range" 
+                               min="5" 
+                               max="85" 
+                               x-model="angle"
+                               class="range range-primary w-full"
+                               :disabled="projectileFlying">
+                    </div>
+
+                    <!-- Power Control -->
+                    <div>
+                        <label class="block text-white font-semibold mb-2">
+                            <i class="fas fa-rocket mr-2"></i>Launch Power: <span x-text="`${Math.round(power)}%`"></span>
+                        </label>
+                        <input type="range" 
+                               min="20" 
+                               max="150" 
+                               x-model="power"
+                               class="range range-secondary w-full"
+                               :disabled="projectileFlying">
+                    </div>
+
+                    <!-- Launch Button -->
+                    <div class="flex items-end">
+                        <button @click="launchProjectile()" 
+                                :disabled="projectileFlying || attemptsLeft <= 0"
+                                class="btn btn-error btn-lg w-full">
+                            <i class="fas fa-rocket mr-2"></i>
+                            <span x-text="projectileFlying ? 'Flying...' : 'FIRE!'"></span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Game Options -->
+                <div class="flex flex-wrap items-center justify-between gap-4 mt-4 pt-4 border-t border-white/20">
+                    <div class="flex items-center gap-4">
+                        <label x-show="currentLevel === 1" class="flex items-center gap-2 text-white cursor-pointer">
+                            <input type="checkbox" x-model="showTrajectory" class="checkbox checkbox-primary">
+                            <span class="text-sm">Show Trajectory</span>
+                        </label>
+                        <div class="text-sm text-gray-300">
+                            Level: <span x-text="currentLevel"></span> / ∞
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button @click="resetLevel()" class="btn btn-outline btn-sm text-white">
+                            <i class="fas fa-redo mr-1"></i>Reset Level
+                        </button>
+                        <button @click="skipLevel()" class="btn btn-ghost btn-sm text-white">
+                            <i class="fas fa-forward mr-1"></i>Skip Level
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Level Complete Overlay (Outside game view) -->
+        <div x-show="levelComplete" 
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95"
+             class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+             style="z-index: 150;">
+            <div class="text-center text-white bg-white/10 backdrop-blur-md rounded-xl p-6 md:p-8 success-message max-w-md w-full">
+                <div class="text-4xl md:text-6xl mb-4">🎉</div>
+                <h3 class="text-2xl md:text-3xl font-bold mb-2">Level Complete!</h3>
+                <p class="text-lg md:text-xl text-gray-300 mb-4" x-text="`Completed in ${level.maxAttempts - attemptsLeft} attempts!`"></p>
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="text-center">
+                        <div class="text-xl md:text-2xl font-bold text-yellow-400" x-text="levelScore"></div>
+                        <div class="text-xs md:text-sm text-gray-300">Level Score</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-xl md:text-2xl font-bold text-green-400" x-text="attemptsLeft"></div>
+                        <div class="text-xs md:text-sm text-gray-300">Attempts Left</div>
+                    </div>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button @click="nextLevel()" class="btn btn-primary flex-1">
+                        <i class="fas fa-arrow-right mr-2"></i>Next Level
+                    </button>
+                    <button @click="resetLevel()" class="btn btn-outline text-white">
+                        <i class="fas fa-redo mr-2"></i>Replay
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Over Overlay (Outside game view) -->
+        <div x-show="gameOver" 
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95"
+             class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+             style="z-index: 150;">
+            <div class="text-center text-white bg-white/10 backdrop-blur-md rounded-xl p-6 md:p-8 max-w-md w-full">
+                <div class="text-4xl md:text-6xl mb-4">💥</div>
+                <h3 class="text-2xl md:text-3xl font-bold mb-2">Out of Attempts!</h3>
+                <p class="text-lg md:text-xl text-gray-300 mb-4">Better aim next time!</p>
+                <div class="text-center mb-6">
+                    <div class="text-xl md:text-2xl font-bold text-yellow-400" x-text="score"></div>
+                    <div class="text-xs md:text-sm text-gray-300">Final Score</div>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button @click="resetLevel()" class="btn btn-primary flex-1">
+                        <i class="fas fa-redo mr-2"></i>Try Again
+                    </button>
+                    <button @click="resetGame()" class="btn btn-outline text-white">
+                        <i class="fas fa-home mr-2"></i>Start Over
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructions Modal -->
+    <div x-show="showInstructions" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+         @click.self="showInstructions = false">
+        
+        <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold">How to Play Projectile Puzzle</h2>
+                    <button @click="showInstructions = false" class="btn btn-ghost btn-sm">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <h3 class="font-bold text-lg mb-2">🎯 Objective</h3>
+                        <p class="text-gray-600">Hit the green target with your projectile using realistic physics. You have limited attempts per level!</p>
+                    </div>
+                    
+                    <div>
+                        <h3 class="font-bold text-lg mb-2">🎮 Controls</h3>
+                        <ul class="text-gray-600 space-y-1">
+                            <li>• <strong>Angle Slider</strong>: Adjust launch angle (5° - 85°)</li>
+                            <li>• <strong>Power Slider</strong>: Control launch velocity (20% - 150%)</li>
+                            <li>• <strong>Fire Button</strong>: Launch the projectile</li>
+                            <li>• <strong>Trajectory Toggle</strong>: Preview your shot path (Level 1 only)</li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h3 class="font-bold text-lg mb-2">🌍 Physics</h3>
+                        <ul class="text-gray-600 space-y-1">
+                            <li>• <strong>Gravity</strong>: Projectiles follow realistic parabolic arcs</li>
+                            <li>• <strong>Wind</strong>: Environmental wind affects projectile flight</li>
+                            <li>• <strong>Obstacles</strong>: Red blocks stop projectiles on impact</li>
+                            <li>• <strong>Collisions</strong>: Precise hit detection for targets and obstacles</li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h3 class="font-bold text-lg mb-2">🏆 Scoring</h3>
+                        <ul class="text-gray-600 space-y-1">
+                            <li>• <strong>Base Score</strong>: 100 points per level completion</li>
+                            <li>• <strong>Efficiency Bonus</strong>: Extra points for unused attempts</li>
+                            <li>• <strong>Quick Shot Bonus</strong>: Bonus for hitting target quickly</li>
+                            <li>• <strong>Perfect Shot</strong>: Maximum bonus for first-try success</li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h3 class="font-bold text-lg mb-2">💡 Pro Tips</h3>
+                        <ul class="text-gray-600 space-y-1">
+                            <li>• Use the trajectory preview to plan your first shots</li>
+                            <li>• Account for wind when aiming</li>
+                            <li>• Higher angles work better for obstacles</li>
+                            <li>• Lower power can be more accurate</li>
+                            <li>• Practice makes perfect - trajectory help disappears after level 1!</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="flex gap-4 mt-6">
+                    <button @click="showInstructions = false" class="btn btn-primary flex-1">
+                        Start Playing!
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function projectilePuzzle() {
+            return {
+                // Game state
+                currentLevel: 1,
+                totalLevels: Infinity, // Endless game
+                score: 0,
+                highScore: 0,
+                attemptsLeft: 3,
+                levelScore: 0,
+                levelComplete: false,
+                gameOver: false,
+                showInstructions: false,
+                
+                // Game area dimensions (5:2 aspect ratio)
+                gameAreaWidth: 800,
+                gameAreaHeight: 320,
+                
+                // Physics settings
+                gravity: 0.15,
+                wind: 0,
+                baseVelocity: 12,
+                
+                // Device-independent timing
+                targetFPS: 60,
+                lastFrameTime: 0,
+                deltaTime: 1/60,
+                
+                // Game objects
+                cannon: { x: 50, y: 290 },
+                target: { x: 650, y: 250 },
+                projectile: { x: 0, y: 0, vx: 0, vy: 0 },
+                obstacles: [],
+                explosions: [],
+                
+                // Controls
+                angle: 45,
+                power: 75,
+                showTrajectory: true,
+                
+                // Animation
+                projectileFlying: false,
+                targetHit: false,
+                animationFrame: null,
+                
+                // Level generation settings - now fully procedural and endless
+                levelTemplates: [], // No longer needed - fully procedural
+                
+                level: {},
+                
+                init() {
+                    this.loadHighScore();
+                    
+                    // Ensure proper initialization order
+                    this.$nextTick(() => {
+                        this.setupGameArea();
+                        // Wait for setup to complete before loading level
+                        this.$nextTick(() => {
+                            this.loadLevel();
+                        });
+                    });
+                    
+                    // Add resize listener for responsive behavior
+                    window.addEventListener('resize', () => {
+                        this.setupGameArea();
+                        this.loadLevel(); // Regenerate level for new dimensions
+                    });
+                },
+                
+                loadHighScore() {
+                    const saved = localStorage.getItem('projectile-puzzle-high-score');
+                    this.highScore = saved ? parseInt(saved) : 0;
+                },
+                
+                saveHighScore() {
+                    if (this.score > this.highScore) {
+                        this.highScore = this.score;
+                        localStorage.setItem('projectile-puzzle-high-score', this.highScore.toString());
+                    }
+                },
+                
+                setupGameArea() {
+                    // Calculate responsive game area dimensions with 5:2 aspect ratio
+                    this.$nextTick(() => {
+                        const container = this.$refs.gameArea?.parentElement;
+                        if (container) {
+                            const containerWidth = container.offsetWidth;
+                            
+                            // Use full width of container (minus padding)
+                            this.gameAreaWidth = containerWidth - 16; // Reduced padding for more width
+                            
+                            // Maintain strict 5:2 aspect ratio (width:height = 5:2, so height = width * 2/5)
+                            this.gameAreaHeight = this.gameAreaWidth * (2/5);
+                            
+                            // Set minimum height for very small screens
+                            const minHeight = 160;
+                            if (this.gameAreaHeight < minHeight) {
+                                this.gameAreaHeight = minHeight;
+                                this.gameAreaWidth = this.gameAreaHeight * (5/2);
+                            }
+                            
+                            // Adjust cannon position relative to game area
+                            this.cannon.x = this.gameAreaWidth * 0.08;
+                            this.cannon.y = this.gameAreaHeight - 25; // Adjusted for smaller heights
+                            
+                            // Force re-render of game area element
+                            if (this.$refs.gameArea) {
+                                this.$refs.gameArea.style.width = this.gameAreaWidth + 'px';
+                                this.$refs.gameArea.style.height = this.gameAreaHeight + 'px';
+                            }
+                        }
+                    });
+                },
+                
+                generateLevel(levelNum) {
+                    // Procedural difficulty scaling - gets progressively harder
+                    const difficultyFactor = Math.min((levelNum - 1) / 20, 1); // Scales from 0 to 1 over 20 levels
+                    
+                    // Calculate level parameters based on difficulty
+                    const obstacles = this.calculateObstacleCount(levelNum);
+                    const maxAttempts = this.calculateMaxAttempts(levelNum);
+                    const windRange = this.calculateWindRange(levelNum);
+                    const description = this.generateLevelDescription(levelNum, obstacles, windRange);
+                    
+                    // Use level number as seed for consistent generation
+                    const seed = levelNum * 123456789;
+                    const rng = this.seededRandom(seed);
+                    
+                    // Generate target position (right side of screen, ensuring it's fully visible)
+                    // Adjust margins based on screen size and game area dimensions
+                    const targetMargin = Math.min(40, this.gameAreaWidth * 0.05); // Dynamic margin based on width
+                    const targetRadius = 20; // Target radius
+                    
+                    // For small screens or first level, ensure target is more conservatively placed
+                    const isSmallScreen = this.gameAreaWidth < 600;
+                    const targetAreaStart = isSmallScreen ? this.gameAreaWidth * 0.55 : this.gameAreaWidth * 0.65;
+                    const targetAreaWidth = isSmallScreen ? this.gameAreaWidth * 0.35 : this.gameAreaWidth * 0.25;
+                    
+                    // Make target placement more challenging at higher levels
+                    const challengeTargetPlacement = levelNum > 10;
+                    const finalTargetAreaStart = challengeTargetPlacement ? 
+                        this.gameAreaWidth * 0.7 : targetAreaStart;
+                    const finalTargetAreaWidth = challengeTargetPlacement ? 
+                        this.gameAreaWidth * 0.2 : targetAreaWidth;
+                    
+                    const targetX = finalTargetAreaStart + rng() * (finalTargetAreaWidth - targetMargin * 2);
+                    const targetY = targetMargin + rng() * (this.gameAreaHeight - targetMargin * 2);
+                    
+                    // Ensure target is fully within bounds with extra safety margin
+                    const safetyMargin = targetRadius + 10;
+                    const clampedTargetX = Math.max(safetyMargin, Math.min(this.gameAreaWidth - safetyMargin, targetX));
+                    const clampedTargetY = Math.max(safetyMargin, Math.min(this.gameAreaHeight - safetyMargin, targetY));
+                    
+                    // Generate wind
+                    const wind = (rng() - 0.5) * 2 * windRange;
+                    
+                    // Generate obstacles that strategically block direct path
+                    const obstacleList = [];
+                    
+                    if (obstacles > 0) {
+                        // Define zones for strategic placement (adjusted for screen size)
+                        const cannonZone = { x: 0, y: 0, width: this.gameAreaWidth * 0.2, height: this.gameAreaHeight };
+                        const targetZone = { x: clampedTargetX - 40, y: clampedTargetY - 40, width: 80, height: 80 };
+                        
+                        // Calculate direct line from cannon to target
+                        const directLine = {
+                            start: { x: this.cannon.x, y: this.cannon.y },
+                            end: { x: clampedTargetX, y: clampedTargetY }
+                        };
+                        
+                        // For first obstacle, ensure it blocks the direct path
+                        let primaryObstacle = this.generateBlockingObstacle(directLine, rng, cannonZone, targetZone, levelNum);
+                        if (primaryObstacle) {
+                            primaryObstacle.id = `obstacle-${levelNum}-0`;
+                            obstacleList.push(primaryObstacle);
+                        }
+                        
+                        // Generate additional obstacles with increasing complexity
+                        for (let i = obstacleList.length; i < obstacles; i++) {
+                            let attempts = 0;
+                            let obstacle;
+                            
+                            do {
+                                // Scale obstacle dimensions based on level and screen size
+                                const obstacleSize = this.calculateObstacleSize(levelNum, rng, isSmallScreen);
+                                const width = obstacleSize.width;
+                                const height = obstacleSize.height;
+                                
+                                // Place obstacles strategically based on level difficulty
+                                const placement = this.calculateObstaclePlacement(levelNum, rng, width);
+                                const x = placement.x;
+                                const y = this.gameAreaHeight - height;
+                                
+                                // Ensure obstacle is fully within game area bounds
+                                const clampedX = Math.max(0, Math.min(this.gameAreaWidth - width, x));
+                                const clampedY = Math.max(0, Math.min(this.gameAreaHeight - height, y));
+                                
+                                obstacle = { x: clampedX, y: clampedY, width, height };
+                                attempts++;
+                            } while (
+                                attempts < 50 && 
+                                (this.isOverlapping(obstacle, cannonZone) || 
+                                 this.isOverlapping(obstacle, targetZone) ||
+                                 obstacleList.some(existing => this.isOverlapping(obstacle, existing)) ||
+                                 !this.isObstacleFullyVisible(obstacle))
+                            );
+                            
+                            if (attempts < 50 && this.isObstacleFullyVisible(obstacle)) {
+                                obstacle.id = `obstacle-${levelNum}-${i}`;
+                                obstacleList.push(obstacle);
+                            }
+                        }
+                        
+                        // Verify at least one obstacle blocks direct path (for levels with obstacles)
+                        if (obstacles > 0 && !this.isDirectPathBlocked(directLine, obstacleList)) {
+                            // Force place a blocking obstacle if none exists
+                            let blockingObstacle = this.generateBlockingObstacle(directLine, rng, cannonZone, targetZone, levelNum);
+                            if (blockingObstacle && this.isObstacleFullyVisible(blockingObstacle)) {
+                                if (obstacleList.length > 0) {
+                                    // Replace the first obstacle with the blocking one
+                                    blockingObstacle.id = `obstacle-${levelNum}-blocking-0`;
+                                    obstacleList[0] = blockingObstacle;
+                                } else {
+                                    blockingObstacle.id = `obstacle-${levelNum}-blocking-single`;
+                                    obstacleList.push(blockingObstacle);
+                                }
+                            }
+                        }
+                    }
+                    
+                    return {
+                        target: { x: clampedTargetX, y: clampedTargetY },
+                        obstacles: obstacleList,
+                        maxAttempts,
+                        wind,
+                        description
+                    };
+                },
+                
+                // Calculate number of obstacles based on level
+                calculateObstacleCount(levelNum) {
+                    if (levelNum === 1) return 0; // Tutorial level
+                    if (levelNum <= 5) return Math.floor((levelNum - 1) * 0.8) + 1; // 1-3 obstacles
+                    if (levelNum <= 15) return Math.floor((levelNum - 5) * 0.4) + 3; // 3-7 obstacles
+                    return Math.min(Math.floor((levelNum - 15) * 0.2) + 7, 12); // 7-12 obstacles max
+                },
+                
+                // Calculate max attempts based on level difficulty
+                calculateMaxAttempts(levelNum) {
+                    const baseAttempts = 3;
+                    const bonusAttempts = Math.floor(levelNum / 3); // Extra attempt every 3 levels
+                    return Math.min(baseAttempts + bonusAttempts, 8); // Cap at 8 attempts
+                },
+                
+                // Calculate wind range based on level
+                calculateWindRange(levelNum) {
+                    if (levelNum === 1) return 0; // No wind on first level
+                    if (levelNum <= 3) return 0.3; // Light wind
+                    if (levelNum <= 8) return 0.8; // Moderate wind
+                    if (levelNum <= 15) return 1.2; // Strong wind
+                    return Math.min(1.5 + (levelNum - 15) * 0.1, 2.5); // Extreme wind, capped at 2.5
+                },
+                
+                // Calculate obstacle size based on level and randomness
+                calculateObstacleSize(levelNum, rng, isSmallScreen) {
+                    // Base sizes get more varied at higher levels
+                    const difficultyFactor = Math.min(levelNum / 20, 1);
+                    
+                    // Base width calculation
+                    let baseWidth, widthRange;
+                    if (isSmallScreen) {
+                        baseWidth = 8 - difficultyFactor * 2; // Gets thinner at higher levels
+                        widthRange = 12 + difficultyFactor * 8;
+                    } else {
+                        baseWidth = 25 - difficultyFactor * 5;
+                        widthRange = 35 + difficultyFactor * 15;
+                    }
+                    
+                    const width = Math.max(baseWidth + rng() * widthRange, isSmallScreen ? 5 : 15);
+                    
+                    // Height calculation - more varied at higher levels
+                    const heightVariation = rng();
+                    let heightMultiplier;
+                    
+                    if (levelNum <= 5) {
+                        // Early levels: predictable heights
+                        if (heightVariation < 0.4) heightMultiplier = 0.3 + rng() * 0.2; // Short
+                        else if (heightVariation < 0.8) heightMultiplier = 0.5 + rng() * 0.2; // Medium
+                        else heightMultiplier = 0.7 + rng() * 0.15; // Tall
+                    } else {
+                        // Later levels: more extreme variations
+                        if (heightVariation < 0.2) heightMultiplier = 0.15 + rng() * 0.15; // Very short
+                        else if (heightVariation < 0.4) heightMultiplier = 0.3 + rng() * 0.2; // Short
+                        else if (heightVariation < 0.6) heightMultiplier = 0.5 + rng() * 0.2; // Medium
+                        else if (heightVariation < 0.8) heightMultiplier = 0.7 + rng() * 0.2; // Tall
+                        else heightMultiplier = 0.85 + rng() * 0.1; // Very tall
+                    }
+                    
+                    const height = this.gameAreaHeight * heightMultiplier;
+                    
+                    return { width: Math.round(width), height: Math.round(height) };
+                },
+                
+                // Calculate obstacle placement based on level strategy
+                calculateObstaclePlacement(levelNum, rng, obstacleWidth) {
+                    const minX = this.gameAreaWidth * 0.2;
+                    const maxX = this.gameAreaWidth * 0.8 - obstacleWidth;
+                    
+                    if (levelNum <= 5) {
+                        // Early levels: random placement in middle area
+                        return { x: minX + rng() * (maxX - minX) };
+                    } else if (levelNum <= 10) {
+                        // Mid levels: tend toward center or sides
+                        const strategy = rng();
+                        if (strategy < 0.4) {
+                            // Center clustering
+                            const centerX = this.gameAreaWidth * 0.5;
+                            const spread = this.gameAreaWidth * 0.15;
+                            return { x: Math.max(minX, Math.min(maxX, centerX - spread + rng() * spread * 2)) };
+                        } else {
+                            // Random placement
+                            return { x: minX + rng() * (maxX - minX) };
+                        }
+                    } else {
+                        // High levels: strategic placement patterns
+                        const strategy = rng();
+                        if (strategy < 0.3) {
+                            // Corridor creation - alternate sides
+                            const side = Math.floor(rng() * 2);
+                            if (side === 0) {
+                                return { x: minX + rng() * (this.gameAreaWidth * 0.15) };
+                            } else {
+                                return { x: this.gameAreaWidth * 0.65 + rng() * (this.gameAreaWidth * 0.15) };
+                            }
+                        } else if (strategy < 0.6) {
+                            // Center maze
+                            const centerX = this.gameAreaWidth * 0.5;
+                            const spread = this.gameAreaWidth * 0.2;
+                            return { x: Math.max(minX, Math.min(maxX, centerX - spread + rng() * spread * 2)) };
+                        } else {
+                            // Random but weighted toward challenge
+                            return { x: minX + rng() * (maxX - minX) };
+                        }
+                    }
+                },
+                
+                // Generate level description based on parameters
+                generateLevelDescription(levelNum, obstacles, windRange) {
+                    const descriptions = [];
+                    
+                    if (levelNum === 1) {
+                        return "Tutorial - Get familiar with the controls";
+                    }
+                    
+                    // Obstacle descriptions
+                    if (obstacles === 0) {
+                        descriptions.push("Clear shot");
+                    } else if (obstacles <= 2) {
+                        descriptions.push("Navigate around obstacles");
+                    } else if (obstacles <= 4) {
+                        descriptions.push("Threading through barriers");
+                    } else if (obstacles <= 6) {
+                        descriptions.push("Obstacle course challenge");
+                    } else {
+                        descriptions.push("Extreme precision maze");
+                    }
+                    
+                    // Wind descriptions
+                    if (windRange === 0) {
+                        descriptions.push("calm conditions");
+                    } else if (windRange <= 0.5) {
+                        descriptions.push("light wind");
+                    } else if (windRange <= 1.0) {
+                        descriptions.push("moderate wind");
+                    } else if (windRange <= 1.5) {
+                        descriptions.push("strong wind");
+                    } else {
+                        descriptions.push("extreme wind");
+                    }
+                    
+                    // Level milestone descriptions
+                    if (levelNum % 10 === 0) {
+                        descriptions.unshift("Milestone Challenge");
+                    } else if (levelNum % 5 === 0) {
+                        descriptions.unshift("Checkpoint Level");
+                    }
+                    
+                    return descriptions.join(" - ");
+                },
+                
+                seededRandom(seed) {
+                    let state = seed;
+                    return function() {
+                        state = (state * 1664525 + 1013904223) % Math.pow(2, 32);
+                        return state / Math.pow(2, 32);
+                    };
+                },
+                
+                isOverlapping(rect1, rect2) {
+                    return !(rect1.x + rect1.width < rect2.x || 
+                             rect2.x + rect2.width < rect1.x || 
+                             rect1.y + rect1.height < rect2.y || 
+                             rect2.y + rect2.height < rect1.y);
+                },
+                
+                // Check if direct line from cannon to target is blocked by obstacles
+                isDirectPathBlocked(line, obstacles) {
+                    return obstacles.some(obstacle => 
+                        this.lineIntersectsRect(line.start, line.end, obstacle)
+                    );
+                },
+                
+                // Check if a line intersects with a rectangle
+                lineIntersectsRect(start, end, rect) {
+                    // Check if line intersects any of the rectangle's edges
+                    const rectLines = [
+                        { start: { x: rect.x, y: rect.y }, end: { x: rect.x + rect.width, y: rect.y } }, // top
+                        { start: { x: rect.x + rect.width, y: rect.y }, end: { x: rect.x + rect.width, y: rect.y + rect.height } }, // right
+                        { start: { x: rect.x + rect.width, y: rect.y + rect.height }, end: { x: rect.x, y: rect.y + rect.height } }, // bottom
+                        { start: { x: rect.x, y: rect.y + rect.height }, end: { x: rect.x, y: rect.y } } // left
+                    ];
+                    
+                    return rectLines.some(rectLine => 
+                        this.linesIntersect(start, end, rectLine.start, rectLine.end)
+                    );
+                },
+                
+                // Check if two line segments intersect
+                linesIntersect(p1, p2, p3, p4) {
+                    const denom = (p1.x - p2.x) * (p3.y - p4.y) - (p1.y - p2.y) * (p3.x - p4.x);
+                    if (Math.abs(denom) < 0.0001) return false; // parallel lines
+                    
+                    const t = ((p1.x - p3.x) * (p3.y - p4.y) - (p1.y - p3.y) * (p3.x - p4.x)) / denom;
+                    const u = -((p1.x - p2.x) * (p1.y - p3.y) - (p1.y - p2.y) * (p1.x - p3.x)) / denom;
+                    
+                    return t >= 0 && t <= 1 && u >= 0 && u <= 1;
+                },
+                
+                // Generate an obstacle that blocks the direct path to target
+                generateBlockingObstacle(directLine, rng, cannonZone, targetZone, levelNum) {
+                    const attempts = 50;
+                    const isSmallScreen = this.gameAreaWidth < 600;
+                    
+                    for (let i = 0; i < attempts; i++) {
+                        // Calculate midpoint of direct line with some variation
+                        const t = 0.3 + rng() * 0.4; // Place obstacle somewhere between 30%-70% along the path
+                        const midX = directLine.start.x + (directLine.end.x - directLine.start.x) * t;
+                        const midY = directLine.start.y + (directLine.end.y - directLine.start.y) * t;
+                        
+                        // Create obstacle around this point (scaled for screen size and level)
+                        const obstacleSize = this.calculateObstacleSize(levelNum, rng, isSmallScreen);
+                        const width = obstacleSize.width;
+                        const height = Math.min(obstacleSize.height, 60 + rng() * (this.gameAreaHeight * 0.25));
+                        
+                        // Offset the obstacle position to ensure it intersects the line
+                        const offsetX = (rng() - 0.5) * width * 0.5;
+                        const offsetY = (rng() - 0.5) * height * 0.3;
+                        
+                        const obstacle = {
+                            x: Math.max(0, Math.min(this.gameAreaWidth - width, midX - width/2 + offsetX)),
+                            y: Math.max(0, Math.min(this.gameAreaHeight - height, midY - height/2 + offsetY)),
+                            width,
+                            height
+                        };
+                        
+                        // Ensure it doesn't overlap protected zones, blocks the path, and is fully visible
+                        if (!this.isOverlapping(obstacle, cannonZone) && 
+                            !this.isOverlapping(obstacle, targetZone) &&
+                            this.lineIntersectsRect(directLine.start, directLine.end, obstacle) &&
+                            this.isObstacleFullyVisible(obstacle)) {
+                            return obstacle;
+                        }
+                    }
+                    
+                    return null;
+                },
+                
+                // Check if obstacle is fully within the visible game area
+                isObstacleFullyVisible(obstacle) {
+                    return obstacle.x >= 0 && 
+                           obstacle.y >= 0 && 
+                           obstacle.x + obstacle.width <= this.gameAreaWidth && 
+                           obstacle.y + obstacle.height <= this.gameAreaHeight &&
+                           obstacle.width > 0 && obstacle.height > 0; // Ensure positive dimensions
+                },
+                
+                loadLevel() {
+                    // Ensure game area is properly set up before generating level
+                    if (this.gameAreaWidth <= 0 || this.gameAreaHeight <= 0) {
+                        // Game area not ready, try again after a short delay
+                        setTimeout(() => this.loadLevel(), 50);
+                        return;
+                    }
+                    
+                    // Generate level procedurally
+                    this.level = this.generateLevel(this.currentLevel);
+                    this.target = { ...this.level.target };
+                    this.obstacles = [...this.level.obstacles];
+                    this.attemptsLeft = this.level.maxAttempts;
+                    this.wind = this.level.wind;
+                    this.levelComplete = false;
+                    
+                    // Debug: Log obstacles for levels with multiple obstacles
+                    if (this.level.obstacles.length > 1) {
+                        console.log(`Level ${this.currentLevel} obstacles:`, this.obstacles.map(obs => ({
+                            id: obs.id,
+                            x: obs.x,
+                            y: obs.y,
+                            width: obs.width,
+                            height: obs.height,
+                            visible: this.isObstacleFullyVisible(obs)
+                        })));
+                    }
+                    this.gameOver = false;
+                    this.targetHit = false;
+                    this.projectileFlying = false;
+                    this.explosions = [];
+                    
+                    // Disable trajectory after first level
+                    if (this.currentLevel > 1) {
+                        this.showTrajectory = false;
+                    }
+                    
+                    // Debug log for small screens
+                    if (window.innerWidth < 768) {
+                        console.log('Level loaded for small screen:', {
+                            gameAreaWidth: this.gameAreaWidth,
+                            gameAreaHeight: this.gameAreaHeight,
+                            targetPosition: this.target,
+                            targetInBounds: this.target.x < this.gameAreaWidth && this.target.y < this.gameAreaHeight
+                        });
+                    }
+                    
+                    // Debug log for level 6 to check for invisible obstacles
+                    if (this.currentLevel === 6) {
+                        console.log('Level 6 debug:', {
+                            gameAreaWidth: this.gameAreaWidth,
+                            gameAreaHeight: this.gameAreaHeight,
+                            obstacles: this.obstacles.map(obs => ({
+                                x: obs.x,
+                                y: obs.y,
+                                width: obs.width,
+                                height: obs.height,
+                                bottom: obs.y + obs.height,
+                                right: obs.x + obs.width
+                            })),
+                            cannonPosition: this.cannon,
+                            targetPosition: this.target
+                        });
+                    }
+                    
+                    // Debug log for high levels to monitor procedural generation
+                    if (this.currentLevel > 15 && this.currentLevel % 5 === 0) {
+                        console.log(`Level ${this.currentLevel} procedural debug:`, {
+                            obstacles: this.obstacles.length,
+                            attemptsAllowed: this.attemptsLeft,
+                            windStrength: Math.abs(this.wind).toFixed(2),
+                            description: this.level.description
+                        });
+                    }
+                },
+                
+                get trajectoryPath() {
+                    if (!this.showTrajectory || this.currentLevel > 1) return '';
+                    
+                    const points = this.calculateTrajectory();
+                    if (points.length < 2) return '';
+                    
+                    let path = `M ${points[0].x} ${points[0].y}`;
+                    for (let i = 1; i < points.length; i++) {
+                        path += ` L ${points[i].x} ${points[i].y}`;
+                    }
+                    return path;
+                },
+                
+                calculateTrajectory() {
+                    const points = [];
+                    const angleRad = (this.angle * Math.PI) / 180;
+                    const velocity = (this.power / 100) * this.baseVelocity;
+                    
+                    let vx = Math.cos(angleRad) * velocity;
+                    let vy = -Math.sin(angleRad) * velocity;
+                    let x = this.cannon.x;
+                    let y = this.cannon.y;
+                    
+                    const maxPoints = 150;
+                    
+                    for (let i = 0; i < maxPoints; i++) {
+                        points.push({ x, y });
+                        
+                        // Apply physics with consistent timestep
+                        vx += this.wind * 0.005;
+                        vy += this.gravity;
+                        x += vx;
+                        y += vy;
+                        
+                        // Stop if out of bounds
+                        if (x > this.gameAreaWidth || y > this.gameAreaHeight || x < 0) break;
+                        
+                        // Stop if hits obstacle
+                        if (this.checkObstacleCollision(x, y)) break;
+                    }
+                    
+                    return points;
+                },
+                
+                launchProjectile() {
+                    if (this.projectileFlying || this.attemptsLeft <= 0) return;
+                    
+                    this.attemptsLeft--;
+                    this.projectileFlying = true;
+                    this.targetHit = false;
+                    this.lastFrameTime = performance.now();
+                    
+                    // Set initial projectile position
+                    this.projectile.x = this.cannon.x;
+                    this.projectile.y = this.cannon.y;
+                    
+                    // Calculate initial velocity with consistent scaling
+                    const angleRad = (this.angle * Math.PI) / 180;
+                    const velocity = (this.power / 100) * this.baseVelocity;
+                    
+                    this.projectile.vx = Math.cos(angleRad) * velocity;
+                    this.projectile.vy = -Math.sin(angleRad) * velocity;
+                    
+                    this.animateProjectile();
+                },
+                
+                animateProjectile() {
+                    const animate = (currentTime) => {
+                        if (!this.projectileFlying) return;
+                        
+                        // Calculate frame-independent delta time
+                        if (this.lastFrameTime === 0) this.lastFrameTime = currentTime;
+                        const rawDelta = (currentTime - this.lastFrameTime) / 1000;
+                        this.lastFrameTime = currentTime;
+                        
+                        // Clamp delta time to prevent large jumps and ensure consistent physics
+                        this.deltaTime = Math.min(rawDelta, 1/30); // Max 30fps minimum for stability
+                        
+                        // Normalize to target 60fps for consistent physics
+                        const normalizedDelta = this.deltaTime * this.targetFPS;
+                        
+                        // Apply physics with frame-independent movement
+                        this.projectile.vx += this.wind * 0.005 * normalizedDelta;
+                        this.projectile.vy += this.gravity * normalizedDelta;
+                        this.projectile.x += this.projectile.vx * normalizedDelta;
+                        this.projectile.y += this.projectile.vy * normalizedDelta;
+                        
+                        // Check bounds
+                        if (this.projectile.x > this.gameAreaWidth || 
+                            this.projectile.y > this.gameAreaHeight || 
+                            this.projectile.x < 0) {
+                            this.projectileMiss();
+                            return;
+                        }
+                        
+                        // Check obstacle collision
+                        if (this.checkObstacleCollision(this.projectile.x, this.projectile.y)) {
+                            this.projectileMiss();
+                            return;
+                        }
+                        
+                        // Check target collision
+                        if (this.checkTargetCollision()) {
+                            this.projectileHit();
+                            return;
+                        }
+                        
+                        this.animationFrame = requestAnimationFrame(animate);
+                    };
+                    
+                    this.animationFrame = requestAnimationFrame(animate);
+                },
+                
+                checkTargetCollision() {
+                    const dx = this.projectile.x - this.target.x;
+                    const dy = this.projectile.y - this.target.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    return distance < 25; // Target radius + projectile radius
+                },
+                
+                checkObstacleCollision(x, y) {
+                    return this.obstacles.some(obstacle => {
+                        // Add small buffer to prevent edge case issues
+                        const buffer = 2;
+                        return x >= (obstacle.x - buffer) && 
+                               x <= (obstacle.x + obstacle.width + buffer) &&
+                               y >= (obstacle.y - buffer) && 
+                               y <= (obstacle.y + obstacle.height + buffer);
+                    });
+                },
+                
+                projectileHit() {
+                    this.projectileFlying = false;
+                    this.targetHit = true;
+                    
+                    // Create explosion effect
+                    this.explosions.push({
+                        id: Date.now(),
+                        x: this.target.x,
+                        y: this.target.y
+                    });
+                    
+                    // Remove explosion after animation
+                    setTimeout(() => {
+                        this.explosions = this.explosions.filter(e => e.id !== this.explosions[0]?.id);
+                    }, 600);
+                    
+                    // Calculate score
+                    this.levelScore = 100 + (this.attemptsLeft * 25);
+                    this.score += this.levelScore;
+                    this.saveHighScore();
+                    
+                    // Show level complete after brief delay
+                    setTimeout(() => {
+                        this.levelComplete = true;
+                    }, 1000);
+                },
+                
+                projectileMiss() {
+                    this.projectileFlying = false;
+                    
+                    // Create explosion at impact point
+                    this.explosions.push({
+                        id: Date.now(),
+                        x: this.projectile.x,
+                        y: this.projectile.y
+                    });
+                    
+                    setTimeout(() => {
+                        this.explosions = this.explosions.filter(e => e.id !== this.explosions[0]?.id);
+                    }, 600);
+                    
+                    // Check if out of attempts
+                    if (this.attemptsLeft <= 0) {
+                        setTimeout(() => {
+                            this.gameOver = true;
+                        }, 800);
+                    }
+                },
+                
+                nextLevel() {
+                    this.currentLevel++;
+                    this.loadLevel();
+                },
+                
+                skipLevel() {
+                    this.nextLevel();
+                },
+                
+                resetLevel() {
+                    if (this.animationFrame) {
+                        cancelAnimationFrame(this.animationFrame);
+                    }
+                    this.lastFrameTime = 0;
+                    this.loadLevel();
+                },
+                
+                resetGame() {
+                    this.currentLevel = 1;
+                    this.score = 0;
+                    this.resetLevel();
+                }
+            }
+        }
+    </script>
+</body>
+</html>
