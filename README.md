@@ -59,6 +59,7 @@ This project is a showcase of multiple web applications - from productivity tool
 | 🪐 **Tiny Planet Simulator** | Interactive orbital mechanics game - control gravity to slingshot planets into targets! | ✅ Complete | Physics Simulation, Orbital Mechanics & Real-time Rendering |
 | 🌤️ **Sky Runner** | Endless flying adventure with powerups, weather effects, and beautiful parallax backgrounds! | ✅ Complete | Endless Runner, Physics Engine & Dynamic Weather |
 | 🚀 **Space Shooter** | Retro-style space combat! Fight waves of enemies, collect powerups, and survive as long as possible! | ✅ Complete | Arcade Combat, Wave System & Powerup Collection |
+| 🧱 **Breakout Arena** | Classic Breakout with modern twists - power-ups, moving bricks, and multi-ball action! | ✅ Complete | Physics Engine, Power-up System & Multi-ball |
 
 ### 🎯 Application Features
 
@@ -192,6 +193,17 @@ This project is a showcase of multiple web applications - from productivity tool
 - **Lives System**: Start with 3 lives, temporary invincibility after hits, strategic survival gameplay
 - **High Score Tracking**: Local storage saves top 5 scores with wave progression data
 - **Performance Optimized**: Smooth 60fps gameplay with efficient DOM manipulation and rendering
+
+#### 🧱 Breakout Arena
+- **Classic Breakout Mechanics**: Traditional paddle-and-ball gameplay with modern enhancements
+- **Dynamic Brick Types**: Colored bricks (10-50 pts), moving bricks, and unbreakable bricks
+- **Power-up System**: Paddle expansion, multi-ball, fireball, and slow-motion effects
+- **Progressive Levels**: 10 challenging levels with increasing complexity and brick patterns
+- **Combo System**: Build combos for score multipliers up to 10x for consecutive brick hits
+- **Multi-ball Action**: Control multiple balls simultaneously for faster brick clearing
+- **Physics Engine**: Realistic ball physics with paddle spin control and velocity management
+- **Visual Effects**: Particle systems, ball trails, score popups, and smooth animations
+- **High Score Persistence**: Local storage for best score tracking across game sessions
 
 ## 🚀 Quick Start
 

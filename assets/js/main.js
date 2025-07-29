@@ -4,7 +4,7 @@ function hubApp() {
         searchTerm: '',
         filterStatus: 'all',
         filterCategory: 'all',
-        completedTools: 16,
+        completedTools: 17,
         
         // Sample tools data - will be updated as real tools are built
         tools: [
@@ -185,6 +185,17 @@ function hubApp() {
                 category: 'games',
                 technologies: ['Arcade Combat', 'Wave System', 'Powerup Collection', 'High Scores'],
                 url: './tools/space-shooter/'
+            },
+            {
+                id: 'breakout',
+                name: 'Breakout Arena',
+                description: 'Classic Breakout with modern twists - power-ups, moving bricks, and multi-ball action!',
+                icon: '🧱',
+                status: 'complete',
+                statusLabel: 'Complete',
+                category: 'games',
+                technologies: ['Physics Engine', 'Power-up System', 'Multi-ball', 'Combo System'],
+                url: './tools/breakout/'
             }
         ],
 

@@ -219,7 +219,7 @@
         <div class="container mx-auto px-4 py-4">
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-4">
-                    <a href="../../" class="btn btn-ghost btn-sm">
+                    <a href="../../" class="btn btn-ghost btn-sm text-white hover:text-gray-200">
                         <i class="fas fa-arrow-left mr-2"></i>
                         <span class="hidden md:inline">Back to Hub</span>
                     </a>
@@ -548,15 +548,21 @@
                 gravityEffects: [], // Visual effects for gravity clicks
                 gravityVectors: [], // Force direction indicators
                 
-                // Physics constants
-                GRAVITY_CONSTANT: 150, // Increased from 50 for stronger sun influence
+                // Physics constants (frame-independent)
+                GRAVITY_CONSTANT: 300, // Increased from 150 for much stronger gravity
                 PLANET_SPAWN_RATE: 3500, // Slightly slower spawning to accommodate more planets
                 MAX_PLANETS: 12, // Increased from 6 to 12 for more populated gameplay
+                
+                // Physics scaling (pixels per second)
+                PHYSICS_SCALE: 60, // Base physics scale for 60fps equivalent
+                ACCELERATION_SCALE: 0.04 * 60, // Increased from 0.02 * 60 for stronger gravity
+                MAX_VELOCITY: 12 * 60, // Increased from 8 * 60 for higher speed limits
                 
                 // Timers
                 gameTimer: null,
                 planetSpawner: null,
                 animationFrame: null,
+                lastTime: 0, // For delta time calculation
                 
                 init() {
                     this.setupGameArea();
@@ -564,6 +570,18 @@
                     this.generateTargets();
                     this.spawnInitialPlanets();
                     this.showInstructions = true;
+                    this.adjustForDPI();
+                },
+                
+                adjustForDPI() {
+                    // Get device pixel ratio for consistent physics
+                    const dpr = window.devicePixelRatio || 1;
+                    const baseScale = Math.max(0.8, Math.min(1.2, dpr)); // Clamp between 0.8 and 1.2
+                    
+                    // Adjust physics constants based on DPI
+                    this.PHYSICS_SCALE = 60 * baseScale;
+                    this.ACCELERATION_SCALE = 0.04 * 60 * baseScale; // Updated to match stronger gravity
+                    this.MAX_VELOCITY = 12 * 60 * baseScale; // Updated to match higher speed limits
                 },
                 
                 setupGameArea() {
@@ -671,34 +689,34 @@
                         case 0: // top
                             x = Math.random() * rect.width;
                             y = 0;
-                            // Calculate orbital velocity for top spawn (further reduced speed)
+                            // Calculate orbital velocity for top spawn (increased speed for delta time)
                             const topDist = Math.sqrt((x - this.sun.x) ** 2 + (this.sun.y) ** 2);
-                            const orbitalSpeedTop = Math.sqrt(this.GRAVITY_CONSTANT * this.sun.mass / topDist) * 0.25; // Reduced from 0.4
+                            const orbitalSpeedTop = Math.sqrt(this.GRAVITY_CONSTANT * this.sun.mass / topDist) * 1.2; // Increased from 0.8
                             vx = x < this.sun.x ? orbitalSpeedTop : -orbitalSpeedTop;
-                            vy = Math.random() * 1 + 0.5; // Reduced from 1.5+1
+                            vy = Math.random() * 4 + 2; // Increased from 3+1.5
                             break;
                         case 1: // right
                             x = rect.width;
                             y = Math.random() * rect.height;
                             const rightDist = Math.sqrt((rect.width - this.sun.x) ** 2 + (y - this.sun.y) ** 2);
-                            const orbitalSpeedRight = Math.sqrt(this.GRAVITY_CONSTANT * this.sun.mass / rightDist) * 0.25;
-                            vx = -(Math.random() * 1 + 0.5);
+                            const orbitalSpeedRight = Math.sqrt(this.GRAVITY_CONSTANT * this.sun.mass / rightDist) * 1.2;
+                            vx = -(Math.random() * 4 + 2);
                             vy = y < this.sun.y ? -orbitalSpeedRight : orbitalSpeedRight;
                             break;
                         case 2: // bottom
                             x = Math.random() * rect.width;
                             y = rect.height;
                             const bottomDist = Math.sqrt((x - this.sun.x) ** 2 + (rect.height - this.sun.y) ** 2);
-                            const orbitalSpeedBottom = Math.sqrt(this.GRAVITY_CONSTANT * this.sun.mass / bottomDist) * 0.25;
+                            const orbitalSpeedBottom = Math.sqrt(this.GRAVITY_CONSTANT * this.sun.mass / bottomDist) * 1.2;
                             vx = x > this.sun.x ? orbitalSpeedBottom : -orbitalSpeedBottom;
-                            vy = -(Math.random() * 1 + 0.5);
+                            vy = -(Math.random() * 4 + 2);
                             break;
                         case 3: // left
                             x = 0;
                             y = Math.random() * rect.height;
                             const leftDist = Math.sqrt((this.sun.x) ** 2 + (y - this.sun.y) ** 2);
-                            const orbitalSpeedLeft = Math.sqrt(this.GRAVITY_CONSTANT * this.sun.mass / leftDist) * 0.25;
-                            vx = Math.random() * 1 + 0.5;
+                            const orbitalSpeedLeft = Math.sqrt(this.GRAVITY_CONSTANT * this.sun.mass / leftDist) * 1.2;
+                            vx = Math.random() * 4 + 2;
                             vy = y > this.sun.y ? -orbitalSpeedLeft : orbitalSpeedLeft;
                             break;
                     }
@@ -719,7 +737,7 @@
                     this.planets.push(planet);
                 },
                 
-                updatePhysics() {
+                updatePhysics(deltaTime) {
                     if (!this.isRunning) return;
                     
                     const gameArea = this.$refs.gameArea;
@@ -727,7 +745,7 @@
                     
                     const rect = gameArea.getBoundingClientRect();
                     
-                    // Update planets
+                    // Update planets with delta time
                     this.planets.forEach((planet, index) => {
                         // Apply sun gravity
                         const dx = this.sun.x - planet.x;
@@ -740,30 +758,30 @@
                             const ax = (force * dx / distance) / planet.mass;
                             const ay = (force * dy / distance) / planet.mass;
                             
-                            // Apply gravitational acceleration (reduced for slower gameplay)
-                            planet.vx += ax * 0.02; // Reduced from 0.025
-                            planet.vy += ay * 0.02;
+                            // Apply gravitational acceleration (delta time independent)
+                            planet.vx += ax * this.ACCELERATION_SCALE * deltaTime;
+                            planet.vy += ay * this.ACCELERATION_SCALE * deltaTime;
                             
                             // Add some orbital stability for planets that get too close
                             if (distance < 60) {
                                 // Apply tangential velocity to create orbital motion
                                 const tangentVx = -dy / distance * 2;
                                 const tangentVy = dx / distance * 2;
-                                planet.vx += tangentVx * 0.1;
-                                planet.vy += tangentVy * 0.1;
+                                planet.vx += tangentVx * 0.1 * this.PHYSICS_SCALE * deltaTime;
+                                planet.vy += tangentVy * 0.1 * this.PHYSICS_SCALE * deltaTime;
                             }
                         }
                         
                         // Apply velocity damping to prevent runaway speeds
                         const speed = Math.sqrt(planet.vx * planet.vx + planet.vy * planet.vy);
-                        if (speed > 8) { // Further reduced maximum speed limit for slower gameplay
-                            planet.vx = (planet.vx / speed) * 8;
-                            planet.vy = (planet.vy / speed) * 8;
+                        if (speed > this.MAX_VELOCITY) {
+                            planet.vx = (planet.vx / speed) * this.MAX_VELOCITY;
+                            planet.vy = (planet.vy / speed) * this.MAX_VELOCITY;
                         }
                         
-                        // Update position
-                        planet.x += planet.vx;
-                        planet.y += planet.vy;
+                        // Update position (delta time independent)
+                        planet.x += planet.vx * deltaTime;
+                        planet.y += planet.vy * deltaTime;
                         
                         // Check target collisions
                         this.targets.forEach((target, targetIndex) => {
@@ -835,12 +853,12 @@
                         const distance = Math.sqrt(dx * dx + dy * dy);
                         
                         if (distance > 0) {
-                            const force = this.gravityStrength * 200;
+                            const force = this.gravityStrength * 800; // Increased from 200 to 800 for much stronger gravity
                             const ax = (force * dx / distance) / planet.mass;
                             const ay = (force * dy / distance) / planet.mass;
                             
-                            planet.vx += ax * 0.1;
-                            planet.vy += ay * 0.1;
+                            planet.vx += ax * 0.3; // Increased from 0.1 to 0.3 for stronger application
+                            planet.vy += ay * 0.3;
                             
                             // Create gravity vector visualization
                             if (distance < 200) { // Only show vectors for nearby planets
@@ -930,12 +948,12 @@
                         const distance = Math.sqrt(dx * dx + dy * dy);
                         
                         if (distance > 0) {
-                            const force = this.gravityStrength * 120; // Reduced from 200 for continuous mode
+                            const force = this.gravityStrength * 400; // Increased from 120 to 400 for stronger continuous gravity
                             const ax = (force * dx / distance) / planet.mass;
                             const ay = (force * dy / distance) / planet.mass;
                             
-                            planet.vx += ax * 0.05; // Reduced from 0.1 for smoother continuous application
-                            planet.vy += ay * 0.05;
+                            planet.vx += ax * 0.15; // Increased from 0.05 to 0.15 for stronger continuous application
+                            planet.vy += ay * 0.15;
                             
                             // Create gravity vector visualization (less frequent)
                             if (distance < 200 && Math.random() < 0.2) { // Only 20% chance for vectors
@@ -977,12 +995,20 @@
                 },
                 
                 startGameLoop() {
-                    const loop = () => {
-                        this.updatePhysics();
+                    const loop = (currentTime = 0) => {
+                        // Calculate delta time in seconds
+                        const deltaTime = this.lastTime ? (currentTime - this.lastTime) / 1000 : 0.016; // Fallback to ~60fps
+                        this.lastTime = currentTime;
+                        
+                        // Cap delta time to prevent large jumps (pause/resume)
+                        const clampedDeltaTime = Math.min(deltaTime, 0.033); // Max 30fps equivalent
+                        
+                        this.updatePhysics(clampedDeltaTime);
                         if (this.isRunning) {
                             this.animationFrame = requestAnimationFrame(loop);
                         }
                     };
+                    this.lastTime = 0; // Reset delta time tracking
                     loop();
                 },
                 
@@ -1038,6 +1064,7 @@
                     this.gameTime = 0;
                     this.score = 0;
                     this.planetsHit = 0;
+                    this.lastTime = 0; // Reset delta time tracking
                     
                     this.spawnInitialPlanets();
                 },
