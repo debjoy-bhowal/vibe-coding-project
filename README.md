@@ -1,10 +1,6 @@
-# 🚀 Vibe Coding Competition - Tools & Games Collecti### 🎮 Interactive Games
+# 🚀 Vibe Coding Competition - Tools & Games Collection
 
-| Game | Description | Status | Tech Focus |
-|------|-------------|--------|------------|
-| 🪞 **Mirror Maze** | Dual-board puzzle where your shadow moves opposite - reach both exits! | ✅ Complete | Game Logic, Dual Boards & Progressive Levels |
-| 🪐 **Tiny Planet Simulator** | Interactive orbital mechanics game - control gravity to slingshot planets into targets! | ✅ Complete | Physics Simulation, Orbital Mechanics & Real-time Rendering |
-| 🌤️ **Sky Runner** | Endless flying adventure with powerups, weather effects, and beautiful parallax backgrounds! | ✅ Complete | Endless Runner, Physics Engine & Dynamic Weather |![Built with AI](https://img.shields.io/badge/Built%20with-AI%20Coding%20Tools-purple?style=for-the-badge)](https://github.com/debjoy-bhowal/vibe-coding-project)
+[![Built with AI](https://img.shields.io/badge/Built%20with-AI%20Coding%20Tools-purple?style=for-the-badge)](https://github.com/debjoy-bhowal/vibe-coding-project)
 [![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/HTML)
 [![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/CSS)
 [![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
@@ -55,11 +51,13 @@ This project is a showcase of multiple web applications - from productivity tool
 | ⌨️ **Typing Speed Tester** | Test and improve typing speed with real-time analytics | ✅ Complete | Performance Metrics & Real-time Feedback |
 | 🎨 **Pixel Art Maker** | Create pixel art with interactive canvas and export features | ✅ Complete | Canvas API & Interactive Drawing |
 
-### � Interactive Games
+### 🎮 Interactive Games
 
 | Game | Description | Status | Tech Focus |
 |------|-------------|--------|------------|
 | 🪞 **Mirror Maze** | Dual-board puzzle where your shadow moves opposite - reach both exits! | ✅ Complete | Game Logic, Dual Boards & Progressive Levels |
+| 🪐 **Tiny Planet Simulator** | Interactive orbital mechanics game - control gravity to slingshot planets into targets! | ✅ Complete | Physics Simulation, Orbital Mechanics & Real-time Rendering |
+| 🌤️ **Sky Runner** | Endless flying adventure with powerups, weather effects, and beautiful parallax backgrounds! | ✅ Complete | Endless Runner, Physics Engine & Dynamic Weather |
 
 ### 🎯 Application Features
 
