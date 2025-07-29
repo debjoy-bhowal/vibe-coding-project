@@ -58,6 +58,7 @@ This project is a showcase of multiple web applications - from productivity tool
 | 🪞 **Mirror Maze** | Dual-board puzzle where your shadow moves opposite - reach both exits! | ✅ Complete | Game Logic, Dual Boards & Progressive Levels |
 | 🪐 **Tiny Planet Simulator** | Interactive orbital mechanics game - control gravity to slingshot planets into targets! | ✅ Complete | Physics Simulation, Orbital Mechanics & Real-time Rendering |
 | 🌤️ **Sky Runner** | Endless flying adventure with powerups, weather effects, and beautiful parallax backgrounds! | ✅ Complete | Endless Runner, Physics Engine & Dynamic Weather |
+| 🚀 **Space Shooter** | Retro-style space combat! Fight waves of enemies, collect powerups, and survive as long as possible! | ✅ Complete | Arcade Combat, Wave System & Powerup Collection |
 
 ### 🎯 Application Features
 
@@ -180,6 +181,17 @@ This project is a showcase of multiple web applications - from productivity tool
 - **Visual Effects**: Smooth CSS animations, particle systems, and responsive UI feedback
 - **Performance Optimized**: 60fps rendering with efficient collision detection and object management
 - **Persistent High Scores**: Local storage for best score tracking and achievement comparison
+
+#### 🚀 Space Shooter
+- **Retro Arcade Combat**: Classic space shooter gameplay inspired by Galaga and Asteroids
+- **Wave-Based Progression**: Survive increasingly challenging waves of enemies with escalating difficulty
+- **Multiple Enemy Types**: Basic UFOs and armed shooter enemies with different attack patterns
+- **Powerup Collection System**: Shield protection, rapid fire, multi-shot, and extra lives
+- **Combat Mechanics**: Responsive shooting, enemy AI with return fire, precise collision detection
+- **Visual Effects**: Starfield background, explosion animations, shield effects, and weapon glows
+- **Lives System**: Start with 3 lives, temporary invincibility after hits, strategic survival gameplay
+- **High Score Tracking**: Local storage saves top 5 scores with wave progression data
+- **Performance Optimized**: Smooth 60fps gameplay with efficient DOM manipulation and rendering
 
 ## 🚀 Quick Start
 

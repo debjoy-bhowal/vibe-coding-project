@@ -399,8 +399,6 @@
                 birdRotation: 0,
                 birdEmoji: '🐦',
                 playerScale: 'scale-100',
-                gravity: 0.6,
-                flapPower: -12,
                 
                 // Game Objects
                 obstacles: [],
@@ -419,6 +417,11 @@
                 obstacleSpawnRate: 0.06, // Increased for better obstacle flow
                 powerupSpawnRate: 0.003, // Reduced from 0.008 for fewer powerups
                 minObstacleDistance: 180, // Balanced distance for good spacing
+                
+                // Physics (frame-independent)
+                pixelsPerSecond: 300, // Base movement speed in pixels per second
+                gravityPixelsPerSecond: 600, // Gravity in pixels per second squared
+                flapVelocityPixelsPerSecond: 360, // Flap velocity in pixels per second
                 
                 // Animation
                 animationId: null,
@@ -444,15 +447,26 @@
                     // Detect mobile device
                     this.isMobile = window.innerWidth < 640 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
                     
+                    // Get device pixel ratio for consistent physics
+                    const dpr = window.devicePixelRatio || 1;
+                    const baseScale = Math.max(0.8, Math.min(1.2, dpr)); // Clamp between 0.8 and 1.2
+                    
                     if (this.isMobile) {
                         // Adjust bird position for mobile
                         this.birdX = 60;
-                        // Reduce game speed slightly for mobile
-                        this.gameSpeed = 1.8;
+                        // Adjust physics for mobile DPI
+                        this.pixelsPerSecond = 280 * baseScale;
+                        this.gravityPixelsPerSecond = 580 * baseScale;
+                        this.flapVelocityPixelsPerSecond = 340 * baseScale;
                         // Adjust spawn rates for mobile
-                        this.obstacleSpawnRate = 0.05; // Good mobile obstacle rate
-                        this.powerupSpawnRate = 0.004; // Reduced from 0.01 for fewer powerups
-                        this.minObstacleDistance = 140; // Mobile spacing
+                        this.obstacleSpawnRate = 0.05;
+                        this.powerupSpawnRate = 0.004;
+                        this.minObstacleDistance = 140;
+                    } else {
+                        // Desktop physics scaled by DPI
+                        this.pixelsPerSecond = 300 * baseScale;
+                        this.gravityPixelsPerSecond = 600 * baseScale;
+                        this.flapVelocityPixelsPerSecond = 360 * baseScale;
                     }
                 },
                 
@@ -535,9 +549,12 @@
                     this.powerups = [];
                     this.activePowerups = [];
                     this.timeOfDay = 'day';
-                    this.gameSpeed = this.isMobile ? 1.8 : 2;
                     this.birdEmoji = '🐦';
                     this.playerScale = 'scale-100';
+                    this.lastTime = 0; // Reset delta time tracking
+                    
+                    // Reset physics to base values
+                    this.adjustForMobile();
                     
                     this.gameLoop();
                 },
@@ -547,48 +564,59 @@
                     
                     // Check for double jump powerup
                     const doubleJump = this.activePowerups.find(p => p.type === 'doubleJump');
-                    const jumpPower = doubleJump ? this.flapPower * 1.5 : this.flapPower;
+                    const jumpMultiplier = doubleJump ? 1.5 : 1;
                     
-                    this.birdVelocity = jumpPower;
+                    this.birdVelocity = -(this.flapVelocityPixelsPerSecond * jumpMultiplier);
                     this.birdRotation = -20;
                 },
                 
-                gameLoop() {
+                gameLoop(currentTime = 0) {
                     if (this.gameState !== 'playing') return;
                     
+                    // Calculate delta time in seconds
+                    const deltaTime = this.lastTime ? (currentTime - this.lastTime) / 1000 : 0.016; // Fallback to ~60fps
+                    this.lastTime = currentTime;
+                    
+                    // Cap delta time to prevent large jumps (pause/resume)
+                    const clampedDeltaTime = Math.min(deltaTime, 0.033); // Max 30fps equivalent
+                    
                     // Update bird physics
-                    this.updateBird();
+                    this.updateBird(clampedDeltaTime);
                     
                     // Update game objects
-                    this.updateObstacles();
-                    this.updatePowerups();
-                    this.updateActivePowerups();
+                    this.updateObstacles(clampedDeltaTime);
+                    this.updatePowerups(clampedDeltaTime);
+                    this.updateActivePowerups(clampedDeltaTime);
                     
                     // Spawn new objects
-                    this.spawnObstacles();
-                    this.spawnPowerups();
+                    this.spawnObstacles(clampedDeltaTime);
+                    this.spawnPowerups(clampedDeltaTime);
                     
                     // Check collisions
                     this.checkCollisions();
                     
                     // Update game state
-                    this.updateScore();
+                    this.updateScore(clampedDeltaTime);
                     this.updateTimeOfDay();
                     
                     // Continue loop
-                    this.animationId = requestAnimationFrame(() => this.gameLoop());
+                    this.animationId = requestAnimationFrame((time) => this.gameLoop(time));
                 },
                 
-                updateBird() {
+                updateBird(deltaTime) {
                     // Apply gravity (with slow time effect)
                     const slowTime = this.activePowerups.some(p => p.type === 'slowTime');
-                    const gravityMultiplier = slowTime ? 0.3 : 1;
+                    const timeMultiplier = slowTime ? 0.3 : 1;
                     
-                    this.birdVelocity += this.gravity * gravityMultiplier;
-                    this.birdY += this.birdVelocity * gravityMultiplier;
+                    // Update velocity with gravity (pixels per second squared)
+                    this.birdVelocity += this.gravityPixelsPerSecond * deltaTime * timeMultiplier;
                     
-                    // Update rotation based on velocity
-                    this.birdRotation = Math.max(-30, Math.min(60, this.birdVelocity * 3));
+                    // Update position with velocity (pixels per second)
+                    this.birdY += this.birdVelocity * deltaTime * timeMultiplier;
+                    
+                    // Update rotation based on velocity (smoother rotation)
+                    const targetRotation = Math.max(-30, Math.min(60, this.birdVelocity * 0.08));
+                    this.birdRotation = this.birdRotation + (targetRotation - this.birdRotation) * deltaTime * 8;
                     
                     // Check boundaries
                     if (this.birdY > window.innerHeight - 50 || this.birdY < 0) {
@@ -596,35 +624,37 @@
                     }
                 },
                 
-                updateObstacles() {
+                updateObstacles(deltaTime) {
                     const slowTime = this.activePowerups.some(p => p.type === 'slowTime');
-                    const speed = slowTime ? this.gameSpeed * 0.3 : this.gameSpeed;
+                    const timeMultiplier = slowTime ? 0.3 : 1;
+                    const moveSpeed = this.pixelsPerSecond * timeMultiplier * deltaTime;
                     
                     this.obstacles.forEach(obstacle => {
-                        obstacle.x -= speed;
+                        obstacle.x -= moveSpeed;
                     });
                     
                     // Simple cleanup - just remove off-screen obstacles
                     this.obstacles = this.obstacles.filter(obstacle => obstacle.x > -100);
                 },
                 
-                updatePowerups() {
+                updatePowerups(deltaTime) {
                     const slowTime = this.activePowerups.some(p => p.type === 'slowTime');
-                    const speed = slowTime ? this.gameSpeed * 0.3 : this.gameSpeed;
+                    const timeMultiplier = slowTime ? 0.3 : 1;
+                    const moveSpeed = this.pixelsPerSecond * timeMultiplier * deltaTime;
                     
                     this.powerups.forEach(powerup => {
-                        powerup.x -= speed;
+                        powerup.x -= moveSpeed;
                     });
                     
                     // Remove off-screen powerups
                     this.powerups = this.powerups.filter(powerup => powerup.x > -100);
                 },
                 
-                updateActivePowerups() {
-                    const deltaTime = 16; // Approximate frame time
+                updateActivePowerups(deltaTime) {
+                    const deltaMs = deltaTime * 1000; // Convert to milliseconds
                     
                     this.activePowerups = this.activePowerups.filter(powerup => {
-                        powerup.remaining -= deltaTime;
+                        powerup.remaining -= deltaMs;
                         return powerup.remaining > 0;
                     });
                     
@@ -633,8 +663,11 @@
                     this.playerScale = shrink ? 'scale-50' : 'scale-100';
                 },
                 
-                spawnObstacles() {
-                    if (Math.random() < this.obstacleSpawnRate) {
+                spawnObstacles(deltaTime) {
+                    // Convert spawn rate to per-second basis
+                    const spawnChance = this.obstacleSpawnRate * deltaTime * 60; // 60fps equivalent
+                    
+                    if (Math.random() < spawnChance) {
                         const spawnX = window.innerWidth + 50;
                         
                         // More permissive distance check - only block if very recent obstacle
@@ -663,8 +696,11 @@
                     }
                 },
                 
-                spawnPowerups() {
-                    if (Math.random() < this.powerupSpawnRate) {
+                spawnPowerups(deltaTime) {
+                    // Convert spawn rate to per-second basis
+                    const spawnChance = this.powerupSpawnRate * deltaTime * 60; // 60fps equivalent
+                    
+                    if (Math.random() < spawnChance) {
                         const powerupTypes = [
                             { 
                                 type: 'bomb', 
@@ -752,13 +788,17 @@
                     this.score += 10;
                 },
                 
-                updateScore() {
-                    this.score += 0.1;
-                    this.gameSpeed = Math.min(5, 2 + this.score / 100);
+                updateScore(deltaTime) {
+                    // Score increases based on time, not frame rate
+                    this.score += 0.1 * deltaTime * 60; // Equivalent to 0.1 per frame at 60fps
                     
-                    // Increase spawn rates - higher rates for more obstacles
-                    this.obstacleSpawnRate = Math.min(0.08, 0.04 + this.score / 3000); // Increased max and rate
-                    this.powerupSpawnRate = Math.min(0.006, 0.003 + this.score / 15000); // Reduced powerup progression
+                    // Increase movement speed based on score
+                    const speedMultiplier = Math.min(1.8, 1 + this.score / 500);
+                    this.pixelsPerSecond = (this.isMobile ? 280 : 300) * speedMultiplier;
+                    
+                    // Increase spawn rates - frame rate independent
+                    this.obstacleSpawnRate = Math.min(0.08, 0.04 + this.score / 3000);
+                    this.powerupSpawnRate = Math.min(0.006, 0.003 + this.score / 15000);
                 },
                 
                 gameOver() {

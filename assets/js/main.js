@@ -4,7 +4,7 @@ function hubApp() {
         searchTerm: '',
         filterStatus: 'all',
         filterCategory: 'all',
-        completedTools: 15,
+        completedTools: 16,
         
         // Sample tools data - will be updated as real tools are built
         tools: [
@@ -174,6 +174,17 @@ function hubApp() {
                 category: 'games',
                 technologies: ['Endless Runner', 'Physics Engine', 'Powerup System', 'Dynamic Weather'],
                 url: './tools/sky-runner/'
+            },
+            {
+                id: 'space-shooter',
+                name: 'Space Shooter',
+                description: 'Retro-style space combat! Fight waves of enemies, collect powerups, and survive as long as possible!',
+                icon: '🚀',
+                status: 'complete',
+                statusLabel: 'Complete',
+                category: 'games',
+                technologies: ['Arcade Combat', 'Wave System', 'Powerup Collection', 'High Scores'],
+                url: './tools/space-shooter/'
             }
         ],
 
@@ -315,14 +326,3 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
-
-// Service Worker registration for PWA capabilities (optional)
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js').then(function(registration) {
-            console.log('ServiceWorker registration successful');
-        }, function(err) {
-            console.log('ServiceWorker registration failed');
-        });
-    });
-}
