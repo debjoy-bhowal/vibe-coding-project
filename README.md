@@ -50,6 +50,7 @@ This project is a showcase of multiple web applications - from productivity tool
 | 📊 **Data Visualizer** | Transform data into interactive charts and graphs | ✅ Complete | Chart.js & Data Processing |
 | ⌨️ **Typing Speed Tester** | Test and improve typing speed with real-time analytics | ✅ Complete | Performance Metrics & Real-time Feedback |
 | 🎨 **Pixel Art Maker** | Create pixel art with interactive canvas and export features | ✅ Complete | Canvas API & Interactive Drawing |
+| ♿ **Accessibility Checker** | Analyze web content for WCAG compliance with detailed reports and actionable fixes | ✅ Complete | WCAG Analysis, Contrast Checking & Report Generation |
 
 ### 🎮 Interactive Games
 
@@ -151,6 +152,20 @@ This project is a showcase of multiple web applications - from productivity tool
 - **Advanced Controls**: Undo/redo system, keyboard shortcuts, and touch support
 - **Statistics Tracking**: Real-time pixel count, color usage, and progress analytics
 - **Mobile Responsive**: Optimized interface for both desktop and mobile devices
+
+#### ♿ Accessibility Checker
+- **WCAG 2.1 Compliance**: Comprehensive analysis against Web Content Accessibility Guidelines
+- **Multi-Input Support**: Analyze HTML content directly or fetch from URLs with CORS proxy
+- **Detailed Reporting**: Visual report cards with accessibility scores and issue categorization
+- **Interactive Checklist**: Real-time WCAG checklist with pass/fail indicators for key criteria
+- **Issue Highlighting**: Visual overlay system to highlight problematic elements in content preview
+- **Contrast Analysis**: Automated color contrast ratio checking with visual indicators
+- **ARIA Validation**: Check for proper landmark roles, labels, and semantic structure
+- **Alt Text Detection**: Identify missing or inadequate image alternative text
+- **Keyboard Navigation**: Analyze tab order and keyboard accessibility compliance
+- **Export Functionality**: Generate detailed JSON reports for documentation and sharing
+- **Actionable Fixes**: Specific recommendations and WCAG reference links for each issue
+- **Real-time Preview**: Side-by-side content preview with accessibility overlay visualization
 
 #### 🪞 Mirror Maze
 - **Dual-Board Gameplay**: Control avatars in two synchronized worlds with mirror movement mechanics

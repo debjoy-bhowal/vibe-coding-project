@@ -252,7 +252,7 @@
             <div class="absolute bird-shadow transition-all duration-150 ease-out"
                  :style="`left: ${birdX}px; top: ${birdY}px; transform: rotate(${birdRotation}deg);`"
                  :class="[playerScale, activePowerups.some(p => p.type === 'shield') ? 'player-shield' : '']">
-                <div class="text-2xl sm:text-4xl transform scale-x-[-1]" x-text="birdEmoji"></div>
+                <img src="bird.svg" alt="Player Bird" class="w-8 h-8 sm:w-12 sm:h-12 transform scale-x-[-1]" />
             </div>
             
             <!-- Obstacles -->
@@ -397,7 +397,6 @@
                 birdY: 300,
                 birdVelocity: 0,
                 birdRotation: 0,
-                birdEmoji: '🐦',
                 playerScale: 'scale-100',
                 
                 // Game Objects
@@ -549,7 +548,6 @@
                     this.powerups = [];
                     this.activePowerups = [];
                     this.timeOfDay = 'day';
-                    this.birdEmoji = '🐦';
                     this.playerScale = 'scale-100';
                     this.lastTime = 0; // Reset delta time tracking
                     

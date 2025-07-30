@@ -4,7 +4,7 @@ function hubApp() {
         searchTerm: '',
         filterStatus: 'all',
         filterCategory: 'all',
-        completedTools: 18,
+        completedTools: 19,
         
         // Sample tools data - will be updated as real tools are built
         tools: [
@@ -141,6 +141,18 @@ function hubApp() {
                 technologies: ['Canvas API', 'Interactive Drawing', 'PNG Export', 'CSS Generation'],
                 url: './tools/pixel-art-maker/'
             },
+            {
+                id: 'accessibility-checker',
+                name: 'Accessibility Checker',
+                description: 'Analyze web content for WCAG compliance with detailed reports and actionable fixes',
+                icon: '♿',
+                status: 'complete',
+                statusLabel: 'Complete',
+                category: 'tools',
+                technologies: ['WCAG Analysis', 'Contrast Checking', 'ARIA Validation', 'Report Generation'],
+                badges: ['WCAG 2.1'],
+                url: './tools/accessibility-checker/'
+            },
             // Interactive Games
             {
                 id: 'mirror-maze',
@@ -206,6 +218,7 @@ function hubApp() {
                 statusLabel: 'Complete',
                 category: 'games',
                 technologies: ['Physics Simulation', 'Ballistic Trajectory', 'Collision Detection', 'Wind Effects'],
+                badges: ['Procedural'],
                 url: './tools/projectile-puzzle/'
             }
         ],
