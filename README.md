@@ -39,7 +39,7 @@ This project is a showcase of multiple web applications - from productivity tool
 
 | Tool | Description | Status | Tech Focus |
 |------|-------------|--------|------------|
-| 🧮 **Calculator Pro** | Advanced calculator with scientific functions | ✅ Complete | JavaScript Logic & Mathematical Operations |
+| 🧮 **Calculator Pro** | Advanced scientific calculator with three specialized modes (Basic/Scientific/Programmer) | ✅ Complete | Multi-Mode Architecture, Scientific Functions & Base Conversion |
 | 🎨 **Color Palette Generator** | Generate beautiful color schemes and palettes | ✅ Complete | CSS Gradients & Color Theory |
 | 📝 **Markdown Preview** | Real-time markdown editor with live preview | ✅ Complete | Text Processing & Markdown Parsing |
 | 📱 **QR Code Generator** | Generate QR codes for text, URLs, WiFi, vCard and more | ✅ Complete | QR Library Integration & File Downloads |
@@ -66,10 +66,14 @@ This project is a showcase of multiple web applications - from productivity tool
 ### 🎯 Application Features
 
 #### 🧮 Calculator Pro
-- Scientific and basic calculations
-- Memory functions
-- Keyboard shortcuts
-- History tracking
+- **Three Calculator Modes**: Basic (everyday calculations), Scientific (advanced mathematics), and Programmer (bitwise operations)
+- **50+ Mathematical Functions**: Complete trigonometry, logarithms, exponentials, roots, and statistical functions
+- **Multi-Base Support**: Binary, octal, decimal, and hexadecimal with real-time conversion display
+- **Advanced Memory System**: MS/MR/MC/M+/ANS operations with persistent storage across sessions
+- **Unit Converters**: Temperature (°C ↔ °F) and angle (degrees ↔ radians) conversion tools
+- **Expression Parser**: Handle complex mathematical expressions with parentheses and operator precedence
+- **Professional Features**: Comprehensive keyboard shortcuts, calculation history, error handling with auto-recovery
+- **Responsive Design**: Multi-panel layout adapting to all screen sizes with touch-friendly controls
 
 #### 🎨 Color Palette Generator  
 - Multiple color harmony algorithms

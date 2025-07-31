@@ -56,115 +56,328 @@
 
     <!-- Main Calculator -->
     <main class="container mx-auto px-4 py-8">
-        <div class="max-w-md mx-auto">
+        <div class="max-w-6xl mx-auto">
+            <!-- Mode Toggle -->
+            <div class="text-center mb-6">
+                <div class="btn-group">
+                    <button @click="mode = 'basic'" 
+                            :class="mode === 'basic' ? 'btn-active' : ''"
+                            class="btn btn-sm">Basic</button>
+                    <button @click="mode = 'scientific'" 
+                            :class="mode === 'scientific' ? 'btn-active' : ''"
+                            class="btn btn-sm">Scientific</button>
+                    <button @click="mode = 'programmer'" 
+                            :class="mode === 'programmer' ? 'btn-active' : ''"
+                            class="btn btn-sm">Programmer</button>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Main Calculator Panel -->
+                <div class="lg:col-span-2">
             <div class="card bg-white shadow-2xl">
                 <div class="card-body p-6">
                     
-                    <!-- Display -->
+                    <!-- Advanced Display -->
                     <div class="mb-6">
-                        <div class="bg-gray-900 rounded-lg p-4 text-right">
-                            <div class="text-gray-400 text-sm h-6" x-text="previousOperand"></div>
-                            <div class="text-white text-3xl font-mono" x-text="currentOperand || '0'"></div>
+                        <div class="bg-gray-900 rounded-lg p-4">
+                            <!-- Expression Display -->
+                            <div class="text-gray-400 text-sm min-h-6 mb-2" x-text="expression || ''"></div>
+                            
+                            <!-- Previous Operation -->
+                            <div class="text-gray-400 text-sm min-h-6" x-text="previousOperand"></div>
+                            
+                            <!-- Main Display -->
+                            <div class="text-white text-3xl font-mono text-right" x-text="currentOperand || '0'"></div>
+                            
+                            <!-- Unit/Base Display -->
+                            <div class="text-gray-400 text-xs mt-2 flex justify-between">
+                                <span x-show="mode === 'programmer'" x-text="getBaseRepresentation()"></span>
+                                <span x-show="angleUnit !== 'deg'" x-text="angleUnit.toUpperCase()"></span>
+                                <span x-show="memoryValue !== 0" class="text-blue-400">M: <span x-text="memoryValue"></span></span>
+                            </div>
                         </div>
                     </div>
                     
-                    <!-- Buttons Grid -->
-                    <div class="grid grid-cols-4 gap-3">
+                    <!-- Basic Mode -->
+                    <div x-show="mode === 'basic'" class="grid grid-cols-4 gap-3">
                         <!-- Clear and Operations -->
-                        <button @click="clear()" 
-                                class="btn btn-error col-span-2 text-white">
-                            Clear
-                        </button>
-                        <button @click="deleteLast()" 
-                                class="btn btn-warning text-white">
-                            <i class="fas fa-backspace"></i>
-                        </button>
-                        <button @click="chooseOperation('÷')" 
-                                class="btn btn-primary text-white">
-                            ÷
-                        </button>
+                        <button @click="clear()" class="btn btn-error col-span-2 text-white">Clear</button>
+                        <button @click="deleteLast()" class="btn btn-warning text-white"><i class="fas fa-backspace"></i></button>
+                        <button @click="chooseOperation('÷')" class="btn btn-primary text-white">÷</button>
                         
                         <!-- Numbers Row 1 -->
-                        <button @click="appendNumber('7')" 
-                                class="btn btn-outline">7</button>
-                        <button @click="appendNumber('8')" 
-                                class="btn btn-outline">8</button>
-                        <button @click="appendNumber('9')" 
-                                class="btn btn-outline">9</button>
-                        <button @click="chooseOperation('×')" 
-                                class="btn btn-primary text-white">×</button>
+                        <button @click="appendNumber('7')" class="btn btn-outline">7</button>
+                        <button @click="appendNumber('8')" class="btn btn-outline">8</button>
+                        <button @click="appendNumber('9')" class="btn btn-outline">9</button>
+                        <button @click="chooseOperation('×')" class="btn btn-primary text-white">×</button>
                         
                         <!-- Numbers Row 2 -->
-                        <button @click="appendNumber('4')" 
-                                class="btn btn-outline">4</button>
-                        <button @click="appendNumber('5')" 
-                                class="btn btn-outline">5</button>
-                        <button @click="appendNumber('6')" 
-                                class="btn btn-outline">6</button>
-                        <button @click="chooseOperation('-')" 
-                                class="btn btn-primary text-white">-</button>
+                        <button @click="appendNumber('4')" class="btn btn-outline">4</button>
+                        <button @click="appendNumber('5')" class="btn btn-outline">5</button>
+                        <button @click="appendNumber('6')" class="btn btn-outline">6</button>
+                        <button @click="chooseOperation('-')" class="btn btn-primary text-white">-</button>
                         
                         <!-- Numbers Row 3 -->
-                        <button @click="appendNumber('1')" 
-                                class="btn btn-outline">1</button>
-                        <button @click="appendNumber('2')" 
-                                class="btn btn-outline">2</button>
-                        <button @click="appendNumber('3')" 
-                                class="btn btn-outline">3</button>
-                        <button @click="chooseOperation('+')" 
-                                class="btn btn-primary text-white">+</button>
+                        <button @click="appendNumber('1')" class="btn btn-outline">1</button>
+                        <button @click="appendNumber('2')" class="btn btn-outline">2</button>
+                        <button @click="appendNumber('3')" class="btn btn-outline">3</button>
+                        <button @click="chooseOperation('+')" class="btn btn-primary text-white">+</button>
                         
                         <!-- Bottom Row -->
-                        <button @click="appendNumber('0')" 
-                                class="btn btn-outline col-span-2">0</button>
-                        <button @click="appendNumber('.')" 
-                                class="btn btn-outline">.</button>
-                        <button @click="compute()" 
-                                class="btn btn-secondary text-white">=</button>
+                        <button @click="appendNumber('0')" class="btn btn-outline col-span-2">0</button>
+                        <button @click="appendNumber('.')" class="btn btn-outline">.</button>
+                        <button @click="compute()" class="btn btn-secondary text-white">=</button>
                     </div>
                     
-                    <!-- History -->
-                    <div class="mt-6" x-show="history.length > 0">
-                        <div class="divider">History</div>
-                        <div class="max-h-32 overflow-y-auto">
-                            <template x-for="entry in history.slice(-5)" :key="entry.id">
-                                <div class="text-sm text-gray-600 py-1 hover:bg-gray-50 px-2 rounded cursor-pointer"
-                                     @click="loadFromHistory(entry)"
-                                     x-text="entry.expression + ' = ' + entry.result">
+                    <!-- Scientific Mode -->
+                    <div x-show="mode === 'scientific'" class="grid grid-cols-6 gap-2 text-sm">
+                        <!-- First Row - Advanced Functions -->
+                        <button @click="chooseFunction('sin')" class="btn btn-info btn-sm text-white">sin</button>
+                        <button @click="chooseFunction('cos')" class="btn btn-info btn-sm text-white">cos</button>
+                        <button @click="chooseFunction('tan')" class="btn btn-info btn-sm text-white">tan</button>
+                        <button @click="chooseFunction('ln')" class="btn btn-info btn-sm text-white">ln</button>
+                        <button @click="chooseFunction('log')" class="btn btn-info btn-sm text-white">log</button>
+                        <button @click="toggleAngleUnit()" class="btn btn-accent btn-sm text-white" x-text="angleUnit"></button>
+                        
+                        <!-- Second Row -->
+                        <button @click="chooseFunction('asin')" class="btn btn-info btn-sm text-white">sin⁻¹</button>
+                        <button @click="chooseFunction('acos')" class="btn btn-info btn-sm text-white">cos⁻¹</button>
+                        <button @click="chooseFunction('atan')" class="btn btn-info btn-sm text-white">tan⁻¹</button>
+                        <button @click="chooseFunction('e^')" class="btn btn-info btn-sm text-white">eˣ</button>
+                        <button @click="chooseFunction('10^')" class="btn btn-info btn-sm text-white">10ˣ</button>
+                        <button @click="insertConstant('π')" class="btn btn-success btn-sm text-white">π</button>
+                        
+                        <!-- Third Row -->
+                        <button @click="chooseFunction('sqrt')" class="btn btn-info btn-sm text-white">√</button>
+                        <button @click="chooseFunction('cbrt')" class="btn btn-info btn-sm text-white">∛</button>
+                        <button @click="chooseOperation('^')" class="btn btn-primary btn-sm text-white">xʸ</button>
+                        <button @click="chooseFunction('1/x')" class="btn btn-info btn-sm text-white">1/x</button>
+                        <button @click="chooseFunction('abs')" class="btn btn-info btn-sm text-white">|x|</button>
+                        <button @click="insertConstant('e')" class="btn btn-success btn-sm text-white">e</button>
+                        
+                        <!-- Fourth Row - Memory and Special -->
+                        <button @click="memoryStore()" class="btn btn-warning btn-sm text-white">MS</button>
+                        <button @click="memoryRecall()" class="btn btn-warning btn-sm text-white">MR</button>
+                        <button @click="memoryAdd()" class="btn btn-warning btn-sm text-white">M+</button>
+                        <button @click="memoryClear()" class="btn btn-warning btn-sm text-white">MC</button>
+                        <button @click="chooseFunction('!')" class="btn btn-info btn-sm text-white">n!</button>
+                        <button @click="chooseFunction('random')" class="btn btn-success btn-sm text-white">Rnd</button>
+                        
+                        <!-- Number Row -->
+                        <button @click="clear()" class="btn btn-error btn-sm text-white">C</button>
+                        <button @click="deleteLast()" class="btn btn-warning btn-sm text-white">⌫</button>
+                        <button @click="appendNumber('(')" class="btn btn-outline btn-sm">(</button>
+                        <button @click="appendNumber(')')" class="btn btn-outline btn-sm">)</button>
+                        <button @click="chooseOperation('÷')" class="btn btn-primary btn-sm text-white">÷</button>
+                        <button @click="chooseFunction('%')" class="btn btn-primary btn-sm text-white">%</button>
+                        
+                        <!-- Numbers 7-9 -->
+                        <button @click="appendNumber('7')" class="btn btn-outline btn-sm">7</button>
+                        <button @click="appendNumber('8')" class="btn btn-outline btn-sm">8</button>
+                        <button @click="appendNumber('9')" class="btn btn-outline btn-sm">9</button>
+                        <button @click="chooseOperation('×')" class="btn btn-primary btn-sm text-white">×</button>
+                        <button @click="chooseOperation('mod')" class="btn btn-primary btn-sm text-white">mod</button>
+                        <button @click="changeSign()" class="btn btn-outline btn-sm">±</button>
+                        
+                        <!-- Numbers 4-6 -->
+                        <button @click="appendNumber('4')" class="btn btn-outline btn-sm">4</button>
+                        <button @click="appendNumber('5')" class="btn btn-outline btn-sm">5</button>
+                        <button @click="appendNumber('6')" class="btn btn-outline btn-sm">6</button>
+                        <button @click="chooseOperation('-')" class="btn btn-primary btn-sm text-white">-</button>
+                        <button @click="chooseFunction('exp')" class="btn btn-info btn-sm text-white">EXP</button>
+                        <button @click="chooseFunction('x²')" class="btn btn-info btn-sm text-white">x²</button>
+                        
+                        <!-- Numbers 1-3 -->
+                        <button @click="appendNumber('1')" class="btn btn-outline btn-sm">1</button>
+                        <button @click="appendNumber('2')" class="btn btn-outline btn-sm">2</button>
+                        <button @click="appendNumber('3')" class="btn btn-outline btn-sm">3</button>
+                        <button @click="chooseOperation('+')" class="btn btn-primary btn-sm text-white">+</button>
+                        <button @click="chooseFunction('x³')" class="btn btn-info btn-sm text-white">x³</button>
+                        <button @click="chooseFunction('x!')" class="btn btn-info btn-sm text-white">x!</button>
+                        
+                        <!-- Bottom Row -->
+                        <button @click="appendNumber('0')" class="btn btn-outline btn-sm col-span-2">0</button>
+                        <button @click="appendNumber('.')" class="btn btn-outline btn-sm">.</button>
+                        <button @click="compute()" class="btn btn-secondary btn-sm text-white col-span-2">=</button>
+                        <button @click="answerRecall()" class="btn btn-success btn-sm text-white">ANS</button>
+                    </div>
+                    
+                    <!-- Programmer Mode -->
+                    <div x-show="mode === 'programmer'" class="space-y-4">
+                        <!-- Base Selection -->
+                        <div class="flex gap-2 mb-4">
+                            <button @click="base = 16" :class="base === 16 ? 'btn-active' : ''" class="btn btn-sm">HEX</button>
+                            <button @click="base = 10" :class="base === 10 ? 'btn-active' : ''" class="btn btn-sm">DEC</button>
+                            <button @click="base = 8" :class="base === 8 ? 'btn-active' : ''" class="btn btn-sm">OCT</button>
+                            <button @click="base = 2" :class="base === 2 ? 'btn-active' : ''" class="btn btn-sm">BIN</button>
+                        </div>
+                        
+                        <!-- Bitwise Operations -->
+                        <div class="grid grid-cols-6 gap-2 mb-4">
+                            <button @click="chooseOperation('AND')" class="btn btn-primary btn-sm text-white">AND</button>
+                            <button @click="chooseOperation('OR')" class="btn btn-primary btn-sm text-white">OR</button>
+                            <button @click="chooseOperation('XOR')" class="btn btn-primary btn-sm text-white">XOR</button>
+                            <button @click="chooseFunction('NOT')" class="btn btn-primary btn-sm text-white">NOT</button>
+                            <button @click="chooseOperation('<<')" class="btn btn-primary btn-sm text-white"><<</button>
+                            <button @click="chooseOperation('>>')" class="btn btn-primary btn-sm text-white">>></button>
+                        </div>
+                        
+                        <!-- Hex Digits -->
+                        <div class="grid grid-cols-6 gap-2 mb-4">
+                            <button @click="appendNumber('A')" :disabled="base < 16" class="btn btn-outline btn-sm">A</button>
+                            <button @click="appendNumber('B')" :disabled="base < 16" class="btn btn-outline btn-sm">B</button>
+                            <button @click="appendNumber('C')" :disabled="base < 16" class="btn btn-outline btn-sm">C</button>
+                            <button @click="appendNumber('D')" :disabled="base < 16" class="btn btn-outline btn-sm">D</button>
+                            <button @click="appendNumber('E')" :disabled="base < 16" class="btn btn-outline btn-sm">E</button>
+                            <button @click="appendNumber('F')" :disabled="base < 16" class="btn btn-outline btn-sm">F</button>
+                        </div>
+                        
+                        <!-- Numbers -->
+                        <div class="grid grid-cols-4 gap-3">
+                            <button @click="clear()" class="btn btn-error text-white">Clear</button>
+                            <button @click="deleteLast()" class="btn btn-warning text-white"><i class="fas fa-backspace"></i></button>
+                            <button @click="appendNumber('8')" :disabled="base < 10" class="btn btn-outline">8</button>
+                            <button @click="appendNumber('9')" :disabled="base < 10" class="btn btn-outline">9</button>
+                            
+                            <button @click="appendNumber('4')" :disabled="base < 8" class="btn btn-outline">4</button>
+                            <button @click="appendNumber('5')" :disabled="base < 8" class="btn btn-outline">5</button>
+                            <button @click="appendNumber('6')" :disabled="base < 8" class="btn btn-outline">6</button>
+                            <button @click="appendNumber('7')" :disabled="base < 8" class="btn btn-outline">7</button>
+                            
+                            <button @click="appendNumber('2')" :disabled="base < 4" class="btn btn-outline">2</button>
+                            <button @click="appendNumber('3')" :disabled="base < 4" class="btn btn-outline">3</button>
+                            <button @click="appendNumber('0')" class="btn btn-outline">0</button>
+                            <button @click="appendNumber('1')" class="btn btn-outline">1</button>
+                            
+                            <button @click="compute()" class="btn btn-secondary text-white col-span-4">=</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Side Panel -->
+            <div class="space-y-6">
+                <!-- History Panel -->
+                <div class="card bg-white shadow-lg">
+                    <div class="card-body p-4">
+                        <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
+                            <i class="fas fa-history text-primary"></i>
+                            History
+                        </h3>
+                        <div class="max-h-64 overflow-y-auto" x-show="history.length > 0">
+                            <template x-for="entry in history.slice(-10)" :key="entry.id">
+                                <div class="text-sm p-2 hover:bg-gray-50 rounded cursor-pointer border-b border-gray-100"
+                                     @click="loadFromHistory(entry)">
+                                    <div class="font-mono text-gray-600" x-text="entry.expression"></div>
+                                    <div class="font-mono font-bold" x-text="'= ' + entry.result"></div>
+                                    <div class="text-xs text-gray-400" x-text="entry.timestamp"></div>
                                 </div>
                             </template>
                         </div>
+                        <div x-show="history.length === 0" class="text-gray-500 text-center py-8">
+                            No calculations yet
+                        </div>
                         <button @click="clearHistory()" 
+                                x-show="history.length > 0"
                                 class="btn btn-ghost btn-sm w-full mt-2">
                             Clear History
                         </button>
                     </div>
                 </div>
+                
+                <!-- Constants Panel -->
+                <div class="card bg-white shadow-lg" x-show="mode === 'scientific'">
+                    <div class="card-body p-4">
+                        <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
+                            <i class="fas fa-flask text-primary"></i>
+                            Constants
+                        </h3>
+                        <div class="space-y-2">
+                            <button @click="insertConstant('π')" class="btn btn-outline btn-sm w-full justify-start">
+                                π = 3.14159...
+                            </button>
+                            <button @click="insertConstant('e')" class="btn btn-outline btn-sm w-full justify-start">
+                                e = 2.71828...
+                            </button>
+                            <button @click="insertConstant('φ')" class="btn btn-outline btn-sm w-full justify-start">
+                                φ = 1.61803... (Golden Ratio)
+                            </button>
+                            <button @click="insertConstant('c')" class="btn btn-outline btn-sm w-full justify-start">
+                                c = 299792458 (Speed of Light)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Unit Converter -->
+                <div class="card bg-white shadow-lg">
+                    <div class="card-body p-4">
+                        <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
+                            <i class="fas fa-exchange-alt text-primary"></i>
+                            Quick Convert
+                        </h3>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="text-sm font-medium">Temperature:</label>
+                                <div class="grid grid-cols-2 gap-2 mt-1">
+                                    <button @click="convertTemperature('C')" class="btn btn-outline btn-xs">°C → °F</button>
+                                    <button @click="convertTemperature('F')" class="btn btn-outline btn-xs">°F → °C</button>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium">Angle:</label>
+                                <div class="grid grid-cols-2 gap-2 mt-1">
+                                    <button @click="convertAngle('deg')" class="btn btn-outline btn-xs">DEG → RAD</button>
+                                    <button @click="convertAngle('rad')" class="btn btn-outline btn-xs">RAD → DEG</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            
-            <!-- Features Info -->
-            <div class="mt-6 text-center text-gray-600">
-                <p class="text-sm">
-                    <i class="fas fa-keyboard"></i>
-                    Keyboard supported • 
-                    <i class="fas fa-history"></i>
-                    Auto-save history
-                </p>
+        </div>
+        
+        <!-- Keyboard Shortcuts Info -->
+        <div class="mt-8 text-center">
+            <div class="card bg-white/50 backdrop-blur-md shadow-lg inline-block">
+                <div class="card-body p-4">
+                    <h4 class="font-bold mb-2">Keyboard Shortcuts</h4>
+                    <div class="text-sm text-gray-600 grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div>0-9: Numbers</div>
+                        <div>+, -, *, /: Operations</div>
+                        <div>Enter: Calculate</div>
+                        <div>Esc: Clear</div>
+                        <div>Backspace: Delete</div>
+                        <div>.: Decimal</div>
+                        <div>Tab: Switch Mode</div>
+                        <div>M: Memory Store</div>
+                    </div>
+                </div>
             </div>
+        </div>
         </div>
     </main>
 
     <script>
         function calculatorApp() {
             return {
+                mode: 'basic', // basic, scientific, programmer
                 currentOperand: '0',
                 previousOperand: '',
                 operation: undefined,
+                expression: '',
                 history: JSON.parse(localStorage.getItem('calculatorHistory') || '[]'),
+                memoryValue: 0,
+                angleUnit: 'deg', // deg, rad, grad
+                base: 10, // 2, 8, 10, 16
+                lastAnswer: 0,
                 
                 init() {
-                    // Keyboard support
+                    // Enhanced keyboard support
                     document.addEventListener('keydown', (e) => {
+                        e.preventDefault();
+                        
                         if (e.key >= '0' && e.key <= '9') {
                             this.appendNumber(e.key);
                         } else if (e.key === '.') {
@@ -176,22 +389,46 @@
                         } else if (e.key === '*') {
                             this.chooseOperation('×');
                         } else if (e.key === '/') {
-                            e.preventDefault();
                             this.chooseOperation('÷');
+                        } else if (e.key === '^') {
+                            this.chooseOperation('^');
                         } else if (e.key === 'Enter' || e.key === '=') {
                             this.compute();
                         } else if (e.key === 'Escape') {
                             this.clear();
                         } else if (e.key === 'Backspace') {
                             this.deleteLast();
+                        } else if (e.key === 'Tab') {
+                            this.switchMode();
+                        } else if (e.key === 'm' || e.key === 'M') {
+                            this.memoryStore();
+                        } else if (e.key === 'r' || e.key === 'R') {
+                            this.memoryRecall();
+                        } else if (e.key === '(' || e.key === ')') {
+                            this.appendNumber(e.key);
+                        }
+                        
+                        // Hex digits for programmer mode
+                        if (this.mode === 'programmer' && this.base === 16) {
+                            if ('ABCDEF'.includes(e.key.toUpperCase())) {
+                                this.appendNumber(e.key.toUpperCase());
+                            }
                         }
                     });
+                },
+                
+                switchMode() {
+                    const modes = ['basic', 'scientific', 'programmer'];
+                    const currentIndex = modes.indexOf(this.mode);
+                    this.mode = modes[(currentIndex + 1) % modes.length];
+                    this.clear();
                 },
                 
                 clear() {
                     this.currentOperand = '0';
                     this.previousOperand = '';
                     this.operation = undefined;
+                    this.expression = '';
                 },
                 
                 deleteLast() {
@@ -203,7 +440,30 @@
                 },
                 
                 appendNumber(number) {
+                    // Handle parentheses
+                    if (number === '(' || number === ')') {
+                        if (this.currentOperand === '0') {
+                            this.currentOperand = number;
+                        } else {
+                            this.currentOperand += number;
+                        }
+                        return;
+                    }
+                    
+                    // Handle decimal point
                     if (number === '.' && this.currentOperand.includes('.')) return;
+                    
+                    // Handle hex digits in programmer mode
+                    if (this.mode === 'programmer') {
+                        if (this.base === 16 && 'ABCDEF'.includes(number)) {
+                            // Allow hex digits
+                        } else if (this.base === 8 && parseInt(number) >= 8) {
+                            return; // Invalid for octal
+                        } else if (this.base === 2 && parseInt(number) >= 2) {
+                            return; // Invalid for binary
+                        }
+                    }
+                    
                     if (this.currentOperand === '0' && number !== '.') {
                         this.currentOperand = number;
                     } else {
@@ -221,57 +481,333 @@
                     this.currentOperand = '';
                 },
                 
-                compute() {
-                    let computation;
-                    const prev = parseFloat(this.previousOperand);
+                chooseFunction(func) {
                     const current = parseFloat(this.currentOperand);
-                    if (isNaN(prev) || isNaN(current)) return;
+                    let result;
                     
-                    switch (this.operation) {
-                        case '+':
-                            computation = prev + current;
-                            break;
-                        case '-':
-                            computation = prev - current;
-                            break;
-                        case '×':
-                            computation = prev * current;
-                            break;
-                        case '÷':
-                            if (current === 0) {
-                                alert('Cannot divide by zero!');
+                    try {
+                        switch (func) {
+                            case 'sin':
+                                result = Math.sin(this.toRadians(current));
+                                break;
+                            case 'cos':
+                                result = Math.cos(this.toRadians(current));
+                                break;
+                            case 'tan':
+                                result = Math.tan(this.toRadians(current));
+                                break;
+                            case 'asin':
+                                result = this.fromRadians(Math.asin(current));
+                                break;
+                            case 'acos':
+                                result = this.fromRadians(Math.acos(current));
+                                break;
+                            case 'atan':
+                                result = this.fromRadians(Math.atan(current));
+                                break;
+                            case 'ln':
+                                result = Math.log(current);
+                                break;
+                            case 'log':
+                                result = Math.log10(current);
+                                break;
+                            case 'e^':
+                                result = Math.exp(current);
+                                break;
+                            case '10^':
+                                result = Math.pow(10, current);
+                                break;
+                            case 'sqrt':
+                                result = Math.sqrt(current);
+                                break;
+                            case 'cbrt':
+                                result = Math.cbrt(current);
+                                break;
+                            case 'x²':
+                                result = current * current;
+                                break;
+                            case 'x³':
+                                result = current * current * current;
+                                break;
+                            case '1/x':
+                                result = 1 / current;
+                                break;
+                            case 'abs':
+                                result = Math.abs(current);
+                                break;
+                            case '!':
+                            case 'x!':
+                                result = this.factorial(current);
+                                break;
+                            case '%':
+                                result = current / 100;
+                                break;
+                            case 'random':
+                                result = Math.random();
+                                break;
+                            case 'exp':
+                                this.currentOperand += 'e';
                                 return;
-                            }
-                            computation = prev / current;
-                            break;
-                        default:
-                            return;
+                            case 'NOT':
+                                if (this.mode === 'programmer') {
+                                    result = ~this.toBase10(this.currentOperand);
+                                }
+                                break;
+                            default:
+                                return;
+                        }
+                        
+                        if (isNaN(result) || !isFinite(result)) {
+                            throw new Error('Invalid operation');
+                        }
+                        
+                        this.addToHistory(func + '(' + this.currentOperand + ')', result);
+                        this.currentOperand = this.formatResult(result);
+                        this.lastAnswer = result;
+                        
+                    } catch (error) {
+                        this.currentOperand = 'Error';
+                        setTimeout(() => this.clear(), 2000);
                     }
-                    
-                    // Add to history
-                    const expression = this.previousOperand + ' ' + this.currentOperand;
-                    this.addToHistory(expression, computation);
-                    
-                    this.currentOperand = computation.toString();
-                    this.operation = undefined;
-                    this.previousOperand = '';
                 },
                 
+                compute() {
+                    let computation;
+                    let prev, current;
+                    
+                    if (this.mode === 'programmer') {
+                        prev = this.toBase10(this.previousOperand.split(' ')[0]);
+                        current = this.toBase10(this.currentOperand);
+                    } else {
+                        prev = this.evaluateExpression(this.previousOperand.split(' ')[0]);
+                        current = this.evaluateExpression(this.currentOperand);
+                    }
+                    
+                    if (isNaN(prev) || isNaN(current)) return;
+                    
+                    try {
+                        switch (this.operation) {
+                            case '+':
+                                computation = prev + current;
+                                break;
+                            case '-':
+                                computation = prev - current;
+                                break;
+                            case '×':
+                                computation = prev * current;
+                                break;
+                            case '÷':
+                                if (current === 0) throw new Error('Division by zero');
+                                computation = prev / current;
+                                break;
+                            case '^':
+                                computation = Math.pow(prev, current);
+                                break;
+                            case 'mod':
+                                computation = prev % current;
+                                break;
+                            case 'AND':
+                                computation = prev & current;
+                                break;
+                            case 'OR':
+                                computation = prev | current;
+                                break;
+                            case 'XOR':
+                                computation = prev ^ current;
+                                break;
+                            case '<<':
+                                computation = prev << current;
+                                break;
+                            case '>>':
+                                computation = prev >> current;
+                                break;
+                            default:
+                                return;
+                        }
+                        
+                        if (!isFinite(computation)) throw new Error('Invalid result');
+                        
+                        const expression = this.previousOperand + ' ' + this.currentOperand;
+                        this.addToHistory(expression, computation);
+                        
+                        this.currentOperand = this.formatResult(computation);
+                        this.lastAnswer = computation;
+                        this.operation = undefined;
+                        this.previousOperand = '';
+                        
+                    } catch (error) {
+                        this.currentOperand = 'Error';
+                        setTimeout(() => this.clear(), 2000);
+                    }
+                },
+                
+                formatResult(result) {
+                    if (this.mode === 'programmer') {
+                        return this.fromBase10(Math.floor(result));
+                    }
+                    
+                    // Handle very large or very small numbers
+                    if (Math.abs(result) > 1e10 || (Math.abs(result) < 1e-6 && result !== 0)) {
+                        return result.toExponential(6);
+                    }
+                    
+                    // Round to avoid floating point errors
+                    return parseFloat(result.toPrecision(12)).toString();
+                },
+                
+                evaluateExpression(expr) {
+                    // Simple expression evaluator for parentheses
+                    try {
+                        // Replace mathematical constants
+                        expr = expr.replace(/π/g, Math.PI);
+                        expr = expr.replace(/e/g, Math.E);
+                        expr = expr.replace(/φ/g, 1.618033988749);
+                        
+                        // Basic safety check
+                        if (!/^[0-9+\-*/().\se π φ]+$/.test(expr)) {
+                            return parseFloat(expr);
+                        }
+                        
+                        return Function('"use strict"; return (' + expr + ')')();
+                    } catch {
+                        return parseFloat(expr);
+                    }
+                },
+                
+                // Memory functions
+                memoryStore() {
+                    this.memoryValue = parseFloat(this.currentOperand) || 0;
+                },
+                
+                memoryRecall() {
+                    this.currentOperand = this.memoryValue.toString();
+                },
+                
+                memoryAdd() {
+                    this.memoryValue += parseFloat(this.currentOperand) || 0;
+                },
+                
+                memoryClear() {
+                    this.memoryValue = 0;
+                },
+                
+                answerRecall() {
+                    this.currentOperand = this.lastAnswer.toString();
+                },
+                
+                // Angle unit functions
+                toggleAngleUnit() {
+                    const units = ['deg', 'rad', 'grad'];
+                    const currentIndex = units.indexOf(this.angleUnit);
+                    this.angleUnit = units[(currentIndex + 1) % units.length];
+                },
+                
+                toRadians(angle) {
+                    switch (this.angleUnit) {
+                        case 'deg': return angle * Math.PI / 180;
+                        case 'grad': return angle * Math.PI / 200;
+                        default: return angle;
+                    }
+                },
+                
+                fromRadians(radians) {
+                    switch (this.angleUnit) {
+                        case 'deg': return radians * 180 / Math.PI;
+                        case 'grad': return radians * 200 / Math.PI;
+                        default: return radians;
+                    }
+                },
+                
+                // Programmer mode functions
+                toBase10(value) {
+                    return parseInt(value.toString(), this.base) || 0;
+                },
+                
+                fromBase10(value) {
+                    return value.toString(this.base).toUpperCase();
+                },
+                
+                getBaseRepresentation() {
+                    const num = this.toBase10(this.currentOperand);
+                    return `HEX: ${num.toString(16).toUpperCase()} | DEC: ${num} | OCT: ${num.toString(8)} | BIN: ${num.toString(2)}`;
+                },
+                
+                // Utility functions
+                factorial(n) {
+                    if (n < 0 || n > 170) throw new Error('Invalid factorial');
+                    if (n === 0 || n === 1) return 1;
+                    let result = 1;
+                    for (let i = 2; i <= n; i++) {
+                        result *= i;
+                    }
+                    return result;
+                },
+                
+                changeSign() {
+                    if (this.currentOperand !== '0') {
+                        if (this.currentOperand.startsWith('-')) {
+                            this.currentOperand = this.currentOperand.slice(1);
+                        } else {
+                            this.currentOperand = '-' + this.currentOperand;
+                        }
+                    }
+                },
+                
+                insertConstant(constant) {
+                    let value;
+                    switch (constant) {
+                        case 'π': value = Math.PI; break;
+                        case 'e': value = Math.E; break;
+                        case 'φ': value = 1.618033988749; break;
+                        case 'c': value = 299792458; break;
+                        default: return;
+                    }
+                    this.currentOperand = value.toString();
+                },
+                
+                // Conversion functions
+                convertTemperature(from) {
+                    const temp = parseFloat(this.currentOperand);
+                    if (isNaN(temp)) return;
+                    
+                    let result;
+                    if (from === 'C') {
+                        result = (temp * 9/5) + 32; // C to F
+                    } else {
+                        result = (temp - 32) * 5/9; // F to C
+                    }
+                    
+                    this.currentOperand = this.formatResult(result);
+                },
+                
+                convertAngle(from) {
+                    const angle = parseFloat(this.currentOperand);
+                    if (isNaN(angle)) return;
+                    
+                    let result;
+                    if (from === 'deg') {
+                        result = angle * Math.PI / 180; // DEG to RAD
+                    } else {
+                        result = angle * 180 / Math.PI; // RAD to DEG
+                    }
+                    
+                    this.currentOperand = this.formatResult(result);
+                },
+                
+                // History functions
                 addToHistory(expression, result) {
                     const entry = {
                         id: Date.now(),
                         expression: expression,
-                        result: result,
-                        timestamp: new Date().toLocaleString()
+                        result: this.formatResult(result),
+                        timestamp: new Date().toLocaleTimeString()
                     };
                     this.history.unshift(entry);
                     
-                    // Keep only last 50 entries
-                    if (this.history.length > 50) {
-                        this.history = this.history.slice(0, 50);
+                    if (this.history.length > 100) {
+                        this.history = this.history.slice(0, 100);
                     }
                     
-                    // Save to localStorage
                     localStorage.setItem('calculatorHistory', JSON.stringify(this.history));
                 },
                 
