@@ -51,6 +51,7 @@ This project is a showcase of multiple web applications - from productivity tool
 | ⌨️ **Typing Speed Tester** | Test and improve typing speed with real-time analytics | ✅ Complete | Performance Metrics & Real-time Feedback |
 | 🎨 **Pixel Art Maker** | Create pixel art with interactive canvas and export features | ✅ Complete | Canvas API & Interactive Drawing |
 | ♿ **Accessibility Checker** | Analyze web content for WCAG compliance with detailed reports and actionable fixes | ✅ Complete | WCAG Analysis, Contrast Checking & Report Generation |
+| 🧠 **Mind Map & Knowledge Graph** | Create interactive mind maps and knowledge graphs with drag-and-drop nodes and connections | ✅ Complete | Graph Visualization, Interactive Nodes & JSON Export |
 
 ### 🎮 Interactive Games
 
@@ -170,6 +171,20 @@ This project is a showcase of multiple web applications - from productivity tool
 - **Export Functionality**: Generate detailed JSON reports for documentation and sharing
 - **Actionable Fixes**: Specific recommendations and WCAG reference links for each issue
 - **Real-time Preview**: Side-by-side content preview with accessibility overlay visualization
+
+#### 🧠 Mind Map & Knowledge Graph
+- **Interactive Node Creation**: Click anywhere on canvas to create new idea nodes with custom labels
+- **Dynamic Edge Connections**: Connect nodes with directional arrows to visualize relationships
+- **Three Operation Modes**: Switch between Select (edit), Node (create), and Edge (connect) modes
+- **Visual Customization**: 10 color-coded node types for categorizing different information
+- **Multiple Layouts**: Automatic layout algorithms (Cose, Circle, Grid, Breadthfirst, Concentric)
+- **Real-time Editing**: Edit node labels, descriptions, and colors with live preview
+- **Data Persistence**: Automatic browser storage with manual JSON export/import
+- **Image Export**: Generate high-quality PNG images using HTML2Canvas
+- **Drag & Drop Interface**: Intuitive manipulation of nodes with smooth animations
+- **Minimap Navigation**: Overview panel for navigating large mind maps
+- **Statistics Dashboard**: Real-time tracking of nodes, connections, and relationships
+- **Responsive Design**: Touch-friendly interface optimized for desktop, tablet, and mobile
 
 #### 🪞 Mirror Maze
 - **Dual-Board Gameplay**: Control avatars in two synchronized worlds with mirror movement mechanics

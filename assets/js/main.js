@@ -4,7 +4,7 @@ function hubApp() {
         searchTerm: '',
         filterStatus: 'all',
         filterCategory: 'all',
-        completedTools: 19,
+        completedTools: 20,
         
         // Sample tools data - will be updated as real tools are built
         tools: [
@@ -152,6 +152,18 @@ function hubApp() {
                 technologies: ['WCAG Analysis', 'Contrast Checking', 'ARIA Validation', 'Report Generation'],
                 badges: ['WCAG 2.1'],
                 url: './tools/accessibility-checker/'
+            },
+            {
+                id: 'mind-map',
+                name: 'Mind Map & Knowledge Graph',
+                description: 'Create interactive mind maps and knowledge graphs with drag-and-drop nodes and connections',
+                icon: '🧠',
+                status: 'complete',
+                statusLabel: 'Complete',
+                category: 'tools',
+                technologies: ['Cytoscape.js', 'Graph Visualization', 'JSON Export', 'Interactive Nodes'],
+                badges: ['Interactive', 'Drag & Drop'],
+                url: './tools/mind-map/'
             },
             // Interactive Games
             {

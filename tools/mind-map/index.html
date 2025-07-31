@@ -1,0 +1,1596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mind Map & Knowledge Graph Tool - Vibe Tools</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://unpkg.com/cytoscape@3.26.0/dist/cytoscape.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        #cy {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-attachment: fixed;
+        }
+        
+        .node-form {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+        
+        .toolbar {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.9);
+        }
+        
+        .color-picker {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        @media (min-width: 640px) {
+            .color-picker {
+                width: 32px;
+                height: 32px;
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .color-picker {
+                width: 40px;
+                height: 40px;
+            }
+        }
+        
+        .minimap {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.9);
+        }
+        
+        /* Tooltip styles */
+        .node-tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-family: system-ui;
+            max-width: 250px;
+            z-index: 1000;
+            pointer-events: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+        }
+        
+        .node-tooltip.visible {
+            opacity: 1;
+        }
+        
+        .node-tooltip::before {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: rgba(0, 0, 0, 0.9);
+        }
+        
+        /* Mobile-specific optimizations */
+        @media (max-width: 768px) {
+            .node-tooltip {
+                font-size: 11px;
+                padding: 6px 10px;
+                max-width: 200px;
+            }
+            
+            /* Ensure canvas doesn't interfere with mobile sidebar */
+            #cy {
+                touch-action: manipulation;
+                user-select: none;
+                -webkit-user-select: none;
+                -webkit-touch-callout: none;
+            }
+            
+            /* Improve button sizes for touch */
+            .btn-xs {
+                min-height: 2rem;
+                padding: 0.25rem 0.5rem;
+            }
+            
+            /* Better spacing for mobile */
+            .space-x-1 > * + * {
+                margin-left: 0.5rem;
+            }
+            
+            /* Mobile-specific visual feedback */
+            .node-tooltip::after {
+                content: '';
+                position: absolute;
+                top: 100%;
+                left: 50%;
+                transform: translateX(-50%);
+                border: 4px solid transparent;
+                border-top-color: rgba(0, 0, 0, 0.9);
+            }
+        }
+
+        /* Ensure proper scrolling on mobile */
+        @media (max-width: 640px) {
+            .minimap {
+                width: 80px !important;
+                height: 50px !important;
+            }
+            
+            /* Smaller color pickers on very small screens */
+            .color-picker {
+                width: 20px !important;
+                height: 20px !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+    <div x-data="mindMapApp()" class="h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex flex-col overflow-hidden">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b border-gray-200 flex-shrink-0">
+            <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+                <div class="flex justify-between items-center py-2 sm:py-4">
+                    <div class="flex items-center space-x-2 sm:space-x-4">
+                        <a href="../../index.html" class="text-blue-600 hover:text-blue-800 transition-colors">
+                            <i class="fas fa-arrow-left text-lg sm:text-xl"></i>
+                        </a>
+                        <div>
+                            <h1 class="text-lg sm:text-2xl font-bold text-gray-900">🧠 <span class="hidden sm:inline">Mind Map & Knowledge Graph</span><span class="sm:hidden">Mind Map</span></h1>
+                            <p class="text-xs sm:text-sm text-gray-600 hidden sm:block">Create visual knowledge networks and mind maps</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-1 sm:space-x-2">
+                        <div class="badge badge-success text-xs">Interactive</div>
+                        <div class="badge badge-info text-xs hidden sm:inline-flex">Drag & Drop</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="flex flex-row flex-1 min-h-0 overflow-hidden">
+            <!-- Sidebar -->
+            <div class="w-64 sm:w-72 lg:w-80 bg-white shadow-lg border-r border-gray-200 flex flex-col overflow-y-auto flex-shrink-0 
+                        md:relative absolute inset-y-0 left-0 z-30 transform transition-transform duration-300 ease-in-out
+                        md:translate-x-0" 
+                 :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'">
+                
+                <!-- Mobile sidebar header with close button -->
+                <div class="md:hidden flex justify-between items-center p-4 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800">Controls</h3>
+                    <button @click="sidebarOpen = false" class="btn btn-sm btn-ghost">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <!-- Toolbar -->
+                <div class="toolbar p-2 sm:p-3 lg:p-4 border-b border-gray-200">
+                    <h3 class="text-sm sm:text-base lg:text-lg font-semibold text-gray-800 mb-2 sm:mb-3 lg:mb-4">Tools & Controls</h3>
+                    
+                    <!-- Mode Selection -->
+                    <div class="mb-2 sm:mb-3 lg:mb-4">
+                        <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Mode</label>
+                        <div class="flex space-x-1 sm:space-x-2">
+                            <button 
+                                @click="setMode('view')"
+                                :class="mode === 'view' ? 'btn-primary' : 'btn-outline'"
+                                class="btn btn-xs sm:btn-sm flex-1">
+                                <i class="fas fa-eye mr-1"></i> <span class="hidden sm:inline">View</span>
+                            </button>
+                            <button 
+                                @click="setMode('edit')"
+                                :class="mode === 'edit' ? 'btn-primary' : 'btn-outline'"
+                                class="btn btn-xs sm:btn-sm flex-1">
+                                <i class="fas fa-edit mr-1"></i> <span class="hidden sm:inline">Edit</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="mb-2 sm:mb-3 lg:mb-4">
+                        <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Quick Actions</label>
+                        <div class="grid grid-cols-2 gap-1 sm:gap-2">
+                            <button @click="addCentralNode()" class="btn btn-xs sm:btn-sm btn-outline whitespace-nowrap text-xs">
+                                <i class="fas fa-plus mr-1"></i> <span class="hidden sm:inline">Add Node</span><span class="sm:hidden">Node</span>
+                            </button>
+                            <button @click="clearGraph()" class="btn btn-xs sm:btn-sm btn-error">
+                                <i class="fas fa-trash mr-1"></i> <span class="hidden sm:inline">Clear</span>
+                            </button>
+                            <button @click="fitToView()" class="btn btn-xs sm:btn-sm btn-outline">
+                                <i class="fas fa-expand mr-1"></i> <span class="hidden sm:inline">Fit View</span><span class="sm:hidden">Fit</span>
+                            </button>
+                            <button @click="toggleLayout()" class="btn btn-xs sm:btn-sm btn-outline">
+                                <i class="fas fa-magic mr-1"></i> <span class="hidden sm:inline">Layout</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Color Palette -->
+                    <div class="mb-2 sm:mb-3 lg:mb-4">
+                        <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Node Colors</label>
+                        <div class="flex flex-wrap gap-1 sm:gap-2">
+                            <template x-for="color in nodeColors" :key="color">
+                                <div 
+                                    class="color-picker w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10"
+                                    :style="`background-color: ${color}`"
+                                    @click="selectedColor = color; console.log('Selected color:', color)"
+                                    :class="selectedColor === color ? 'ring-2 sm:ring-4 ring-blue-500' : ''"
+                                ></div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Node Shapes -->
+                    <div class="mb-2 sm:mb-3 lg:mb-4">
+                        <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Node Shapes</label>
+                        <div class="grid grid-cols-2 gap-1 sm:gap-2">
+                            <template x-for="shape in nodeShapes" :key="shape.value">
+                                <button 
+                                    @click="selectedShape = shape.value; console.log('Selected shape:', shape.value)"
+                                    :class="selectedShape === shape.value ? 'btn-primary' : 'btn-outline'"
+                                    class="btn btn-xs sm:btn-sm aspect-square p-1"
+                                    :title="shape.name"
+                                >
+                                    <i :class="shape.icon" class="text-xs"></i>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Import/Export -->
+                    <div class="mb-2 sm:mb-3 lg:mb-4">
+                        <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Data Management</label>
+                        <div class="space-y-1 sm:space-y-2">
+                            <button @click="exportAsJSON()" class="btn btn-xs sm:btn-sm btn-outline w-full">
+                                <i class="fas fa-download mr-1"></i> <span class="hidden sm:inline">Export JSON</span><span class="sm:hidden">JSON</span>
+                            </button>
+                            <button @click="exportAsImage()" class="btn btn-xs sm:btn-sm btn-outline w-full">
+                                <i class="fas fa-image mr-1"></i> <span class="hidden sm:inline">Export Image</span><span class="sm:hidden">Image</span>
+                            </button>
+                            <input 
+                                type="file" 
+                                @change="importJSON($event)" 
+                                accept=".json" 
+                                class="file-input file-input-bordered file-input-xs sm:file-input-sm w-full text-xs sm:text-sm"
+                                placeholder="Import JSON"
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Node Editor -->
+                <div x-show="selectedNode && mode === 'view'" class="p-2 sm:p-4 border-b border-gray-200 node-form">
+                    <h4 class="text-sm sm:text-md font-semibold text-gray-800 mb-2 sm:mb-3">View Node</h4>
+                    <template x-if="selectedNode">
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Label</label>
+                                <input 
+                                    type="text" 
+                                    x-model="selectedNode.data.label"
+                                    @input="updateNodeLabel()"
+                                    class="input input-bordered input-sm w-full"
+                                    placeholder="Node label"
+                                    readonly
+                                >
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                                <textarea 
+                                    x-model="selectedNode.data.description"
+                                    @input="updateNodeDescription()"
+                                    class="textarea textarea-bordered textarea-sm w-full"
+                                    placeholder="Node description"
+                                    rows="3"
+                                    readonly
+                                ></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Color</label>
+                                <div class="flex flex-wrap gap-1">
+                                    <div 
+                                        class="w-8 h-8 rounded-full border-2 border-white shadow ring-2 ring-blue-500"
+                                        :style="`background-color: ${selectedNode.data.color}`"
+                                    ></div>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Shape</label>
+                                <div class="flex flex-wrap gap-1">
+                                    <template x-for="shape in nodeShapes" :key="shape.value">
+                                        <div x-show="selectedNode.data.shape === shape.value" class="flex items-center space-x-2">
+                                            <i :class="shape.icon" class="text-blue-500"></i>
+                                            <span class="text-sm text-gray-600" x-text="shape.name"></span>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button @click="deselectNode()" class="btn btn-sm btn-outline w-full">
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Statistics -->
+                <div class="p-2 sm:p-3 lg:p-4 flex-1">
+                    <h4 class="text-sm sm:text-md font-semibold text-gray-800 mb-2 sm:mb-3">Statistics</h4>
+                    <div class="space-y-1 sm:space-y-2 text-xs sm:text-sm text-gray-600">
+                        <div class="flex justify-between">
+                            <span>Nodes:</span>
+                            <span class="font-medium" x-text="nodeCount"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Connections:</span>
+                            <span class="font-medium" x-text="edgeCount"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Mode:</span>
+                            <span class="font-medium capitalize" x-text="mode"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Graph Canvas -->
+            <div class="flex-1 relative min-w-0 overflow-hidden md:ml-0">
+                <!-- Mobile menu button -->
+                <button @click="sidebarOpen = true" 
+                        class="md:hidden fixed top-20 left-4 z-20 btn btn-sm btn-primary shadow-lg">
+                    <i class="fas fa-bars"></i>
+                </button>
+                
+                <!-- Mobile overlay -->
+                <div x-show="sidebarOpen" 
+                     @click="sidebarOpen = false"
+                     class="md:hidden fixed inset-0 bg-black bg-opacity-50 z-20"
+                     x-transition:enter="transition-opacity ease-linear duration-300"
+                     x-transition:enter-start="opacity-0"
+                     x-transition:enter-end="opacity-100"
+                     x-transition:leave="transition-opacity ease-linear duration-300"
+                     x-transition:leave-start="opacity-100"
+                     x-transition:leave-end="opacity-0">
+                </div>
+                
+                <div id="cy" class="w-full h-full"></div>
+                
+                <!-- Instructions Overlay -->
+                <div x-show="nodeCount === 0" class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20 p-4">
+                    <div class="bg-white rounded-lg shadow-xl p-4 sm:p-8 max-w-sm sm:max-w-md text-center">
+                        <i class="fas fa-brain text-2xl sm:text-4xl text-blue-500 mb-2 sm:mb-4"></i>
+                        <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-2 sm:mb-3">Create Your Mind Map</h3>
+                        <div class="text-gray-600 space-y-1 sm:space-y-2 text-xs sm:text-sm">
+                            <p><strong>View Mode:</strong> <span class="hidden sm:inline">Click to view nodes, zoom and pan to explore</span><span class="sm:hidden">Tap to view, pinch to zoom</span></p>
+                            <p><strong>Edit Mode:</strong> <span class="hidden sm:inline">Double-click canvas to add nodes, single-click to select, double-click nodes to connect or edit</span><span class="sm:hidden">Double-tap canvas to add, double-tap nodes to edit</span></p>
+                            <p><strong>Delete:</strong> <span class="hidden sm:inline">Double-click edges to delete connections, right-click nodes to delete them</span><span class="sm:hidden">Long-press nodes/edges to delete</span></p>
+                            <p class="mt-2 sm:mt-4 text-blue-600">
+                                <i class="fas fa-lightbulb mr-1"></i>
+                                <span class="hidden sm:inline">Start by clicking "Central Node" in the toolbar</span>
+                                <span class="sm:hidden">Tap ☰ menu, then "Node"</span>
+                            </p>
+                            <div class="mt-4 sm:mt-6">
+                                <button @click="addCentralNode()" class="btn btn-sm btn-primary w-full">
+                                    <i class="fas fa-plus mr-2"></i>
+                                    Create Central Node
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Minimap -->
+                <div class="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 minimap w-24 h-16 sm:w-32 sm:h-20 lg:w-48 lg:h-32 border border-gray-300 rounded-lg shadow-lg">
+                    <div id="minimap" class="w-full h-full rounded-lg bg-white overflow-hidden"></div>
+                </div>
+
+                <!-- Status Bar -->
+                <div class="absolute bottom-2 left-2 sm:bottom-4 sm:left-4 bg-white bg-opacity-90 backdrop-blur-sm rounded-lg px-2 py-1 sm:px-3 sm:py-2 shadow-lg max-w-xs text-xs sm:text-sm">
+                    <div class="flex items-center space-x-1 sm:space-x-2 text-gray-600">
+                        <i class="fas fa-info-circle"></i>
+                        <span x-text="mode === 'edit' ? 'Edit mode' : 'View mode'"></span>
+                        <span x-show="selectedNodeForEdge" class="hidden sm:inline text-blue-500">
+                            | Node selected
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Success Messages -->
+        <div x-show="message" x-transition class="fixed top-4 right-4 z-50">
+            <div class="alert alert-success shadow-lg">
+                <i class="fas fa-check-circle"></i>
+                <span x-text="message"></span>
+                <button @click="message = ''" class="btn btn-sm btn-ghost">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Edit Mode Popup Modal -->
+        <div x-show="editingPopupNode" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" x-cloak>
+            <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Edit Node</h3>
+                <template x-if="editingPopupNode">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Label</label>
+                            <input 
+                                type="text" 
+                                x-model="editingPopupNode.data.label"
+                                class="input input-bordered w-full"
+                                placeholder="Node label"
+                            >
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                            <textarea 
+                                x-model="editingPopupNode.data.description"
+                                class="textarea textarea-bordered w-full"
+                                placeholder="Node description"
+                                rows="3"
+                            ></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Color</label>
+                            <div class="flex flex-wrap gap-2">
+                                <template x-for="color in nodeColors" :key="color">
+                                    <div 
+                                        class="w-10 h-10 rounded-full cursor-pointer border-2 border-white shadow"
+                                        :style="`background-color: ${color}`"
+                                        @click="editingPopupNode.data.color = color"
+                                        :class="editingPopupNode.data.color === color ? 'ring-2 ring-blue-500' : ''"
+                                    ></div>
+                                </template>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Shape</label>
+                            <div class="grid grid-cols-4 gap-2">
+                                <template x-for="shape in nodeShapes" :key="shape.value">
+                                    <button 
+                                        type="button"
+                                        @click="editingPopupNode.data.shape = shape.value"
+                                        :class="editingPopupNode.data.shape === shape.value ? 'btn-primary' : 'btn-outline'"
+                                        class="btn btn-sm aspect-square p-1"
+                                        :title="shape.name"
+                                    >
+                                        <i :class="shape.icon" class="text-sm"></i>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                        <div class="flex space-x-3">
+                            <button @click="deleteNodeFromPopup()" class="btn btn-error">
+                                <i class="fas fa-trash mr-1"></i> Delete
+                            </button>
+                            <button @click="savePopupEdit()" class="btn btn-primary flex-1">
+                                <i class="fas fa-save mr-1"></i> Save
+                            </button>
+                            <button @click="cancelPopupEdit()" class="btn btn-outline">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function mindMapApp() {
+            return {
+                cy: null,
+                minimap: null,
+                tooltip: null, // For node tooltips
+                sidebarOpen: false, // For mobile sidebar toggle
+                mode: 'view', // 'view' or 'edit'
+                selectedNode: null,
+                editingPopupNode: null,
+                sourceNode: null,
+                selectedNodeForEdge: null, // For edge creation in edit mode
+                nodeCount: 0,
+                edgeCount: 0,
+                selectedColor: '#3B82F6',
+                selectedShape: 'round-rectangle',
+                message: '',
+                clickTimeout: null, // For handling single vs double click
+                clickDelay: 300, // Delay in ms to wait for double click
+                rightClickTimeout: null, // For handling single vs double right-click on edges
+                rightClickDelay: 300, // Delay in ms to wait for double right-click
+                
+                // Mobile touch handling
+                lastTapTime: 0,
+                tapCount: 0,
+                longPressTimeout: null,
+                longPressDelay: 500, // 500ms for long press
+                isLongPress: false,
+                nodeColors: [
+                    '#3B82F6', // blue
+                    '#EF4444', // red
+                    '#10B981', // green
+                    '#F59E0B', // yellow
+                    '#8B5CF6', // purple
+                    '#EC4899', // pink
+                    '#06B6D4', // cyan
+                    '#84CC16', // lime
+                    '#F97316', // orange
+                    '#6B7280', // gray
+                ],
+                nodeShapes: [
+                    { value: 'round-rectangle', name: 'Rounded Rectangle', icon: 'fas fa-square' },
+                    { value: 'ellipse', name: 'Circle', icon: 'fas fa-circle' },
+                    { value: 'diamond', name: 'Diamond', icon: 'fas fa-diamond' },
+                    { value: 'star', name: 'Star', icon: 'fas fa-star' }
+                ],
+
+                init() {
+                    this.$nextTick(() => {
+                        this.initCytoscape();
+                        this.initMinimap();
+                        this.initTooltip();
+                        this.loadFromStorage();
+                        this.updateStats();
+                        this.updateMinimap();
+                    });
+                },
+
+                initCytoscape() {
+                    this.cy = cytoscape({
+                        container: document.getElementById('cy'),
+                        
+                        style: [
+                            {
+                                selector: 'node',
+                                style: {
+                                    'background-color': 'data(color)',
+                                    'label': 'data(label)',
+                                    'text-valign': 'center',
+                                    'text-halign': 'center',
+                                    'color': '#fff',
+                                    'text-outline-width': 2,
+                                    'text-outline-color': 'data(color)',
+                                    'font-size': '12px',
+                                    'font-family': 'system-ui',
+                                    'font-weight': 'bold',
+                                    'width': 'label',
+                                    'height': 'label',
+                                    'padding': '10px',
+                                    'shape': 'data(shape)',
+                                    'transition-property': 'background-color, border-color',
+                                    'transition-duration': '0.3s'
+                                }
+                            },
+                            {
+                                selector: 'node[shape = "round-rectangle"]',
+                                style: {
+                                    'padding': '12px'
+                                }
+                            },
+                            {
+                                selector: 'node[shape = "ellipse"]',
+                                style: {
+                                    'padding': '18px',
+                                    'height': 'label',
+                                    'min-height': '60px'
+                                }
+                            },
+                            {
+                                selector: 'node[shape = "diamond"]',
+                                style: {
+                                    'padding': '22px',
+                                    'height': 'label',
+                                    'min-height': '70px'
+                                }
+                            },
+                            {
+                                selector: 'node[shape = "star"]',
+                                style: {
+                                    'padding': '30px',
+                                    'height': 'label',
+                                    'min-height': '80px'
+                                }
+                            },
+                            {
+                                selector: 'node:selected',
+                                style: {
+                                    'border-width': 3,
+                                    'border-color': '#FFD700',
+                                    'border-style': 'solid'
+                                }
+                            },
+                            {
+                                selector: 'edge',
+                                style: {
+                                    'width': 3,
+                                    'line-color': '#9CA3AF',
+                                    'target-arrow-color': '#9CA3AF',
+                                    'target-arrow-shape': 'triangle',
+                                    'curve-style': 'bezier',
+                                    'arrow-scale': 1.2,
+                                    'transition-property': 'line-color, target-arrow-color',
+                                    'transition-duration': '0.3s'
+                                }
+                            },
+                            {
+                                selector: 'edge:selected',
+                                style: {
+                                    'line-color': '#3B82F6',
+                                    'target-arrow-color': '#3B82F6',
+                                    'width': 4
+                                }
+                            }
+                        ],
+
+                        layout: {
+                            name: 'cose',
+                            animate: true,
+                            animationDuration: 1000,
+                            nodeRepulsion: 400000,
+                            idealEdgeLength: 100,
+                            edgeElasticity: 100,
+                            nestingFactor: 5,
+                            gravity: 80,
+                            numIter: 1000,
+                            randomize: false
+                        },
+
+                        // Interaction options
+                        userPanningEnabled: true,
+                        userZoomingEnabled: true,
+                        boxSelectionEnabled: true,
+                        selectionType: 'single',
+                        wheelSensitivity: 0.2,
+                        minZoom: 0.1,
+                        maxZoom: 3,
+                        
+                        // Enhanced touch support for mobile
+                        touchTapThreshold: 8,
+                        desktopTapThreshold: 4
+                    });
+
+                    // Event handlers
+                    // Handle single clicks on canvas (for deselecting nodes)
+                    this.cy.on('tap', (evt) => {
+                        if (evt.target === evt.cy) {
+                            console.log('Background tap detected - deselecting nodes');
+                            this.deselectAllNodes();
+                        }
+                    });
+
+                    // Handle double clicks on canvas (for adding nodes) - Desktop only
+                    this.cy.on('dblclick', (evt) => {
+                        if (evt.target === evt.cy && !this.isMobileDevice()) {
+                            console.log('Background double-click detected in mode:', this.mode);
+                            if (this.mode === 'edit') {
+                                this.handleCanvasTap(evt);
+                            }
+                            // Always deselect on double-click canvas
+                            this.deselectAllNodes();
+                        }
+                    });
+
+                    // Handle single clicks on nodes (for selection in both modes)
+                    this.cy.on('tap', 'node', (evt) => {
+                        console.log('Node tap detected in mode:', this.mode);
+                        
+                        if (this.isMobileDevice()) {
+                            this.handleMobileNodeTap(evt);
+                        } else {
+                            // Desktop behavior
+                            // Clear any existing timeout
+                            if (this.clickTimeout) {
+                                clearTimeout(this.clickTimeout);
+                                this.clickTimeout = null;
+                            }
+                            
+                            // Set a timeout to handle single click after delay
+                            this.clickTimeout = setTimeout(() => {
+                                this.handleNodeTap(evt.target);
+                                this.clickTimeout = null;
+                            }, this.clickDelay);
+                        }
+                        
+                        evt.stopPropagation();
+                    });
+
+                    // Handle double clicks on nodes (for connection/editing) - Desktop only
+                    this.cy.on('dblclick', 'node', (evt) => {
+                        if (!this.isMobileDevice()) {
+                            console.log('Node double-click detected in mode:', this.mode);
+                            
+                            // Clear the single click timeout since this is a double click
+                            if (this.clickTimeout) {
+                                clearTimeout(this.clickTimeout);
+                                this.clickTimeout = null;
+                            }
+                            
+                            if (this.mode === 'edit') {
+                                if (this.selectedNodeForEdge && this.selectedNodeForEdge.id() !== evt.target.id()) {
+                                    // Connect nodes if one is already selected and it's a different node
+                                    this.addEdge(this.selectedNodeForEdge, evt.target);
+                                    this.selectedNodeForEdge = null;
+                                    this.deselectAllNodes();
+                                } else if (!this.selectedNodeForEdge || this.selectedNodeForEdge.id() === evt.target.id()) {
+                                    // Open edit popup only if no node selected or same node double-clicked
+                                    this.openNodeEditPopup(evt.target);
+                                    this.deselectAllNodes();
+                                }
+                            }
+                            // Don't auto-deselect on double-click node in edit mode
+                            evt.stopPropagation();
+                        }
+                    });
+
+                    // Handle right-click (context menu) on nodes (for deletion in edit mode) - Desktop only
+                    this.cy.on('cxttap', 'node', (evt) => {
+                        if (!this.isMobileDevice()) {
+                            console.log('Node right-click detected in mode:', this.mode);
+                            if (this.mode === 'edit') {
+                                this.deleteNodeDirectly(evt.target);
+                            }
+                            evt.stopPropagation();
+                        }
+                    });
+
+                    // Handle edge clicks (for selection in view mode)
+                    this.cy.on('tap', 'edge', (evt) => {
+                        console.log('Edge tap detected');
+                        if (this.mode === 'view') {
+                            this.selectEdge(evt.target);
+                        }
+                        evt.stopPropagation();
+                    });
+
+                    // Handle double-click on edges (for deletion) - Desktop only
+                    this.cy.on('dblclick', 'edge', (evt) => {
+                        if (!this.isMobileDevice()) {
+                            console.log('Edge double-click detected');
+                            if (this.mode === 'edit') {
+                                this.deleteEdge(evt.target);
+                            }
+                            evt.stopPropagation();
+                        }
+                    });
+
+                    // Handle right-click on edges (for double right-click deletion) - Desktop only
+                    this.cy.on('cxttap', 'edge', (evt) => {
+                        if (!this.isMobileDevice()) {
+                            console.log('Edge right-click detected');
+                            
+                            // Clear any existing right-click timeout
+                            if (this.rightClickTimeout) {
+                                // This is a double right-click - delete the edge
+                                clearTimeout(this.rightClickTimeout);
+                                this.rightClickTimeout = null;
+                                if (this.mode === 'edit') {
+                                    console.log('Double right-click detected - deleting edge');
+                                    this.deleteEdge(evt.target);
+                                }
+                            } else {
+                                // This is the first right-click - start timer
+                                this.rightClickTimeout = setTimeout(() => {
+                                    // Single right-click timeout - do nothing for now
+                                    console.log('Single right-click on edge - no action');
+                                    this.rightClickTimeout = null;
+                                }, this.rightClickDelay);
+                            }
+                            
+                            evt.stopPropagation();
+                        }
+                    });
+
+                    // Mobile-specific touch event handlers
+                    if (this.isMobileDevice()) {
+                        // Add touch start event for long press detection
+                        this.cy.on('touchstart', 'node', (evt) => {
+                            this.startLongPress(evt);
+                        });
+
+                        this.cy.on('touchend', 'node', (evt) => {
+                            this.endLongPress(evt);
+                        });
+
+                        this.cy.on('touchcancel', 'node', (evt) => {
+                            this.cancelLongPress();
+                        });
+
+                        this.cy.on('touchmove', 'node', (evt) => {
+                            this.cancelLongPress();
+                        });
+
+                        // Edge long press for mobile deletion
+                        this.cy.on('touchstart', 'edge', (evt) => {
+                            this.startEdgeLongPress(evt);
+                        });
+
+                        this.cy.on('touchend', 'edge', (evt) => {
+                            this.endEdgeLongPress(evt);
+                        });
+
+                        this.cy.on('touchcancel', 'edge', (evt) => {
+                            this.cancelLongPress();
+                        });
+
+                        this.cy.on('touchmove', 'edge', (evt) => {
+                            this.cancelLongPress();
+                        });
+
+                        // Canvas double tap for mobile
+                        this.cy.on('tap', (evt) => {
+                            if (evt.target === evt.cy) {
+                                this.handleMobileCanvasTap(evt);
+                            }
+                        });
+                    }
+
+                    this.cy.on('add remove', () => {
+                        this.updateStats();
+                        this.saveToStorage();
+                        this.updateMinimap();
+                    });
+
+                    this.cy.on('data', () => {
+                        this.saveToStorage();
+                        this.updateMinimap();
+                    });
+
+                    this.cy.on('position', () => {
+                        this.updateMinimap();
+                    });
+
+                    this.cy.on('viewport', () => {
+                        this.updateMinimap();
+                    });
+
+                    // Tooltip event handlers
+                    this.cy.on('mouseover', 'node', (evt) => {
+                        const node = evt.target;
+                        const description = node.data('description');
+                        if (description && description.trim()) {
+                            this.showTooltip(evt, node, node.data('label'), description);
+                        }
+                    });
+
+                    this.cy.on('mouseout', 'node', () => {
+                        this.hideTooltip();
+                    });
+                },
+
+                initMinimap() {
+                    this.minimap = cytoscape({
+                        container: document.getElementById('minimap'),
+                        
+                        style: [
+                            {
+                                selector: 'node',
+                                style: {
+                                    'background-color': 'data(color)',
+                                    'width': '8px',
+                                    'height': '8px',
+                                    'shape': 'data(shape)'
+                                }
+                            },
+                            {
+                                selector: 'edge',
+                                style: {
+                                    'width': 1,
+                                    'line-color': '#9CA3AF',
+                                    'target-arrow-color': '#9CA3AF',
+                                    'target-arrow-shape': 'triangle',
+                                    'arrow-scale': 0.5,
+                                    'curve-style': 'straight'
+                                }
+                            }
+                        ],
+
+                        // Disable all interactions for minimap
+                        userPanningEnabled: false,
+                        userZoomingEnabled: false,
+                        boxSelectionEnabled: false,
+                        autoungrabify: true,
+                        autounselectify: true
+                    });
+
+                    // Click on minimap to center main view
+                    this.minimap.on('tap', (evt) => {
+                        if (evt.target === this.minimap) {
+                            const pos = evt.position;
+                            this.cy.center();
+                            this.cy.pan(pos);
+                        }
+                    });
+                },
+
+                updateMinimap() {
+                    if (!this.minimap) return;
+                    
+                    // Clear minimap
+                    this.minimap.elements().remove();
+                    
+                    // Copy elements from main graph
+                    const elements = this.cy.elements().jsons();
+                    if (elements.length > 0) {
+                        this.minimap.add(elements);
+                        this.minimap.layout({ 
+                            name: 'preset',
+                            positions: (node) => {
+                                const mainNode = this.cy.getElementById(node.id());
+                                return mainNode.position();
+                            }
+                        }).run();
+                        
+                        // Fit minimap to show all elements
+                        this.minimap.fit(this.minimap.elements(), 10);
+                    }
+                },
+
+                initTooltip() {
+                    // Create tooltip element
+                    this.tooltip = document.createElement('div');
+                    this.tooltip.className = 'node-tooltip';
+                    document.body.appendChild(this.tooltip);
+                },
+
+                showTooltip(evt, node, title, description) {
+                    if (!this.tooltip) return;
+                    
+                    // Set tooltip content
+                    this.tooltip.innerHTML = `
+                        <div style="font-weight: bold; margin-bottom: 4px;">${title}</div>
+                        <div style="font-size: 11px; opacity: 0.9;">${description}</div>
+                    `;
+                    
+                    // Get container and node info
+                    const container = document.getElementById('cy');
+                    const containerRect = container.getBoundingClientRect();
+                    
+                    // Get node position and dimensions
+                    const nodePosition = node.renderedPosition();
+                    const nodeBB = node.renderedBoundingBox();
+                    
+                    // Append to canvas container for proper positioning
+                    container.appendChild(this.tooltip);
+                    
+                    // Get tooltip dimensions after adding to DOM
+                    const tooltipRect = this.tooltip.getBoundingClientRect();
+                    const tooltipWidth = tooltipRect.width;
+                    const tooltipHeight = tooltipRect.height;
+                    
+                    // Calculate position based on node bounds, not cursor
+                    const nodeTop = nodeBB.y1;
+                    const nodeBottom = nodeBB.y2;
+                    const nodeLeft = nodeBB.x1;
+                    const nodeRight = nodeBB.x2;
+                    const nodeCenterX = (nodeLeft + nodeRight) / 2;
+                    
+                    let x = nodeCenterX;
+                    let y = nodeTop - tooltipHeight - 15; // 15px spacing above node
+                    
+                    // If tooltip would go above container, position it below the node
+                    if (y < 10) {
+                        y = nodeBottom + 15; // 15px spacing below node
+                    }
+                    
+                    // Ensure tooltip stays within horizontal bounds
+                    if (x - tooltipWidth / 2 < 10) {
+                        x = tooltipWidth / 2 + 10;
+                    } else if (x + tooltipWidth / 2 > container.offsetWidth - 10) {
+                        x = container.offsetWidth - tooltipWidth / 2 - 10;
+                    }
+                    
+                    // Position the tooltip
+                    this.tooltip.style.position = 'absolute';
+                    this.tooltip.style.left = x + 'px';
+                    this.tooltip.style.top = y + 'px';
+                    this.tooltip.style.transform = 'translateX(-50%)';
+                    this.tooltip.style.zIndex = '1000';
+                    
+                    // Show tooltip
+                    this.tooltip.classList.add('visible');
+                },
+
+                hideTooltip() {
+                    if (this.tooltip) {
+                        this.tooltip.classList.remove('visible');
+                    }
+                },
+
+                setMode(newMode) {
+                    this.mode = newMode;
+                    this.sourceNode = null;
+                    this.deselectNode();
+                    // Close mobile sidebar when mode changes
+                    if (window.innerWidth < 768) {
+                        this.sidebarOpen = false;
+                    }
+                },
+
+                // Mobile device detection
+                isMobileDevice() {
+                    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
+                        || ('ontouchstart' in window) 
+                        || (navigator.maxTouchPoints > 0);
+                },
+
+                // Mobile canvas tap handler
+                handleMobileCanvasTap(evt) {
+                    const currentTime = Date.now();
+                    const timeDiff = currentTime - this.lastTapTime;
+                    
+                    if (timeDiff < 300) { // Double tap detected
+                        this.tapCount++;
+                        if (this.tapCount === 2) {
+                            console.log('Mobile canvas double-tap detected in mode:', this.mode);
+                            if (this.mode === 'edit') {
+                                this.handleCanvasTap(evt);
+                            }
+                            this.tapCount = 0;
+                        }
+                    } else {
+                        this.tapCount = 1;
+                        // Single tap - deselect nodes
+                        setTimeout(() => {
+                            if (this.tapCount === 1) {
+                                this.deselectAllNodes();
+                                this.tapCount = 0;
+                            }
+                        }, 300);
+                    }
+                    
+                    this.lastTapTime = currentTime;
+                },
+
+                // Mobile node tap handler
+                handleMobileNodeTap(evt) {
+                    const currentTime = Date.now();
+                    const timeDiff = currentTime - this.lastTapTime;
+                    
+                    if (timeDiff < 300) { // Double tap detected
+                        this.tapCount++;
+                        if (this.tapCount === 2) {
+                            console.log('Mobile node double-tap detected in mode:', this.mode);
+                            
+                            if (this.mode === 'edit') {
+                                if (this.selectedNodeForEdge && this.selectedNodeForEdge.id() !== evt.target.id()) {
+                                    // Connect nodes if one is already selected and it's a different node
+                                    this.addEdge(this.selectedNodeForEdge, evt.target);
+                                    this.selectedNodeForEdge = null;
+                                    this.deselectAllNodes();
+                                    this.showMessage('Nodes connected successfully');
+                                } else {
+                                    // Open edit popup
+                                    this.openNodeEditPopup(evt.target);
+                                    this.deselectAllNodes();
+                                }
+                            }
+                            this.tapCount = 0;
+                        }
+                    } else {
+                        this.tapCount = 1;
+                        // Single tap - handle node selection
+                        setTimeout(() => {
+                            if (this.tapCount === 1) {
+                                this.handleNodeTap(evt.target);
+                                this.tapCount = 0;
+                            }
+                        }, 300);
+                    }
+                    
+                    this.lastTapTime = currentTime;
+                },
+
+                // Long press handlers for mobile
+                startLongPress(evt) {
+                    this.isLongPress = false;
+                    this.longPressTimeout = setTimeout(() => {
+                        this.isLongPress = true;
+                        console.log('Node long press detected in mode:', this.mode);
+                        if (this.mode === 'edit') {
+                            // Vibrate if available for feedback
+                            if (navigator.vibrate) {
+                                navigator.vibrate(50);
+                            }
+                            this.deleteNodeDirectly(evt.target);
+                            this.showMessage('Node deleted (long press)');
+                        }
+                    }, this.longPressDelay);
+                },
+
+                endLongPress(evt) {
+                    if (this.longPressTimeout) {
+                        clearTimeout(this.longPressTimeout);
+                        this.longPressTimeout = null;
+                    }
+                },
+
+                cancelLongPress() {
+                    if (this.longPressTimeout) {
+                        clearTimeout(this.longPressTimeout);
+                        this.longPressTimeout = null;
+                    }
+                    this.isLongPress = false;
+                },
+
+                // Edge long press handlers for mobile
+                startEdgeLongPress(evt) {
+                    this.isLongPress = false;
+                    this.longPressTimeout = setTimeout(() => {
+                        this.isLongPress = true;
+                        console.log('Edge long press detected in mode:', this.mode);
+                        if (this.mode === 'edit') {
+                            // Vibrate if available for feedback
+                            if (navigator.vibrate) {
+                                navigator.vibrate(50);
+                            }
+                            this.deleteEdge(evt.target);
+                            this.showMessage('Connection deleted (long press)');
+                        }
+                    }, this.longPressDelay);
+                },
+
+                endEdgeLongPress(evt) {
+                    if (this.longPressTimeout) {
+                        clearTimeout(this.longPressTimeout);
+                        this.longPressTimeout = null;
+                    }
+                },
+
+                handleCanvasTap(evt) {
+                    if (this.mode === 'edit') {
+                        // Get position from the event - try multiple position sources
+                        let pos = evt.position || evt.cyPosition || evt.renderedPosition;
+                        
+                        // If no position available, use center of viewport
+                        if (!pos) {
+                            const extent = this.cy.extent();
+                            pos = {
+                                x: (extent.x1 + extent.x2) / 2,
+                                y: (extent.y1 + extent.y2) / 2
+                            };
+                        }
+                        
+                        console.log('Adding node at position:', pos);
+                        this.addNode(pos.x, pos.y);
+                        
+                        // Clear any selected edge creation state
+                        this.selectedNodeForEdge = null;
+                    } else if (this.mode === 'view') {
+                        this.deselectNode();
+                    }
+                },
+
+                // New unified node tap handler
+                handleNodeTap(node) {
+                    if (this.mode === 'view') {
+                        // In view mode, just select for viewing
+                        this.selectNode(node);
+                    } else if (this.mode === 'edit') {
+                        // In edit mode, handle selection for connection
+                        this.handleNodeTapInEditMode(node);
+                    }
+                },
+
+                // Legacy method for backwards compatibility
+                handleNodeTapOld(node) {
+                    if (this.mode === 'view') {
+                        this.selectNode(node);
+                    }
+                },
+
+                // Legacy method for backwards compatibility
+                handleEdgeTap(edge) {
+                    if (this.mode === 'select') {
+                        this.selectEdge(edge);
+                    }
+                },
+
+                addNode(x, y, label = 'New Node', color = null, shape = null) {
+                    const nodeColor = color || this.selectedColor;
+                    const nodeShape = shape || this.selectedShape;
+                    const id = 'node_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                    
+                    // Ensure coordinates are valid numbers
+                    const posX = isNaN(x) ? 100 : x;
+                    const posY = isNaN(y) ? 100 : y;
+                    
+                    console.log('Creating node with ID:', id, 'at position:', posX, posY, 'shape:', nodeShape); // Debug log
+                    
+                    try {
+                        this.cy.add({
+                            group: 'nodes',
+                            data: {
+                                id: id,
+                                label: label,
+                                color: nodeColor,
+                                shape: nodeShape,
+                                description: 'This is a sample description for the node. Hover to see this tooltip!'
+                            },
+                            position: { x: posX, y: posY }
+                        });
+
+                        this.showMessage('Node created successfully');
+                        this.updateMinimap();
+                        console.log('Node created successfully'); // Debug log
+                    } catch (error) {
+                        console.error('Error creating node:', error);
+                        this.showMessage('Error creating node');
+                    }
+                },
+
+                addCentralNode() {
+                    // Get canvas center or fallback to reasonable defaults
+                    const centerX = this.cy.width() ? this.cy.width() / 2 : 400;
+                    const centerY = this.cy.height() ? this.cy.height() / 2 : 300;
+                    console.log('Adding central node at:', centerX, centerY); // Debug log
+                    
+                    // Create central node with custom description
+                    const nodeColor = '#3B82F6';
+                    const nodeShape = 'round-rectangle';
+                    const id = 'node_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                    
+                    try {
+                        this.cy.add({
+                            group: 'nodes',
+                            data: {
+                                id: id,
+                                label: 'Central Idea',
+                                color: nodeColor,
+                                shape: nodeShape,
+                                description: 'This is the central node of your mind map. Start building your ideas from here!'
+                            },
+                            position: { x: centerX, y: centerY }
+                        });
+
+                        this.showMessage('Central node created successfully');
+                        this.updateMinimap();
+                    } catch (error) {
+                        console.error('Error creating central node:', error);
+                        this.showMessage('Error creating central node');
+                    }
+                },
+
+                selectNode(node) {
+                    this.cy.$(':selected').unselect();
+                    node.select();
+                    this.selectedNode = {
+                        id: node.id(),
+                        data: { ...node.data() }
+                    };
+                },
+
+                selectEdge(edge) {
+                    this.cy.elements(':selected').unselect();
+                    edge.select();
+                    this.selectedNode = null;
+                    // Clear edge creation state when selecting an edge
+                    this.selectedNodeForEdge = null;
+                    this.cy.forceRender();
+                },
+
+                deselectNode() {
+                    this.cy.elements(':selected').unselect();
+                    this.selectedNode = null;
+                    this.cy.forceRender();
+                },
+
+                deselectAllNodes() {
+                    // Add a small delay before deselecting
+                    setTimeout(() => {
+                        // Unselect all selected elements in cytoscape
+                        this.cy.elements(':selected').unselect();
+                        // Clear all selection states
+                        this.selectedNode = null;
+                        this.selectedNodeForEdge = null;
+                        this.sourceNode = null;
+                        // Force a visual update
+                        this.cy.forceRender();
+                        console.log('All nodes deselected');
+                    }, 50); // 50ms delay
+                },
+
+                handleEdgeCreation(node) {
+                    if (!this.sourceNode) {
+                        this.sourceNode = node;
+                        this.showMessage('Source node selected. Click target node.');
+                    } else {
+                        if (this.sourceNode.id() !== node.id()) {
+                            this.addEdge(this.sourceNode, node);
+                        }
+                        this.sourceNode = null;
+                    }
+                },
+
+                addEdge(source, target) {
+                    const id = 'edge_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                    
+                    this.cy.add({
+                        group: 'edges',
+                        data: {
+                            id: id,
+                            source: source.id(),
+                            target: target.id()
+                        }
+                    });
+
+                    this.showMessage('Connection created successfully');
+                    this.updateMinimap();
+                },
+
+                // New methods for unified Edit Mode
+                handleNodeTapInEditMode(node) {
+                    if (!this.selectedNodeForEdge) {
+                        // First click - select node for edge creation
+                        this.selectedNodeForEdge = node;
+                        this.selectNode(node);
+                        this.showMessage('Node selected. Double-click another node to connect, or single-click to change selection.');
+                    } else if (this.selectedNodeForEdge.id() !== node.id()) {
+                        // Single click on different node - change selection
+                        this.selectedNodeForEdge = node;
+                        this.selectNode(node);
+                        this.showMessage('Selection changed. Double-click another node to connect.');
+                    } else {
+                        // Clicking same node again - deselect
+                        this.selectedNodeForEdge = null;
+                        this.deselectNode();
+                    }
+                },
+
+                openNodeEditPopup(node) {
+                    this.editingPopupNode = {
+                        id: node.id(),
+                        data: { ...node.data() }
+                    };
+                },
+
+                savePopupEdit() {
+                    if (this.editingPopupNode) {
+                        const node = this.cy.getElementById(this.editingPopupNode.id);
+                        node.data(this.editingPopupNode.data);
+                        this.cy.style().update();
+                        this.showMessage('Node updated successfully');
+                        this.editingPopupNode = null;
+                        this.saveToStorage();
+                    }
+                },
+
+                cancelPopupEdit() {
+                    this.editingPopupNode = null;
+                },
+
+                deleteNodeFromPopup() {
+                    if (this.editingPopupNode) {
+                        const node = this.cy.getElementById(this.editingPopupNode.id);
+                        this.cy.remove(node);
+                        this.editingPopupNode = null;
+                        this.showMessage('Node deleted successfully');
+                    }
+                },
+
+                deleteEdge(edge) {
+                    this.cy.remove(edge);
+                    this.showMessage('Connection deleted successfully');
+                },
+
+                deleteNodeDirectly(node) {
+                    this.cy.remove(node);
+                    this.showMessage('Node and connections deleted successfully');
+                    this.deselectAllNodes();
+                },
+
+                updateNodeLabel() {
+                    if (this.selectedNode) {
+                        const node = this.cy.getElementById(this.selectedNode.id);
+                        node.data('label', this.selectedNode.data.label);
+                    }
+                },
+
+                updateNodeDescription() {
+                    if (this.selectedNode) {
+                        const node = this.cy.getElementById(this.selectedNode.id);
+                        node.data('description', this.selectedNode.data.description);
+                    }
+                },
+
+                updateNodeColor(color) {
+                    if (this.selectedNode) {
+                        const node = this.cy.getElementById(this.selectedNode.id);
+                        // Update the node data and force a style refresh
+                        node.data('color', color);
+                        this.selectedNode.data.color = color;
+                        
+                        // Force the node to update its visual style
+                        node.style('background-color', color);
+                        node.style('text-outline-color', color);
+                        
+                        // Trigger a redraw to ensure visual update
+                        this.cy.forceRender();
+                        
+                        this.updateMinimap();
+                        console.log('Node color updated to:', color); // Debug log
+                    }
+                },
+
+                updateNodeShape(shape) {
+                    if (this.selectedNode) {
+                        const node = this.cy.getElementById(this.selectedNode.id);
+                        // Update the node data and force a style refresh
+                        node.data('shape', shape);
+                        this.selectedNode.data.shape = shape;
+                        
+                        // Force the node to update its visual style
+                        node.style('shape', shape);
+                        
+                        // Trigger a redraw to ensure visual update
+                        this.cy.forceRender();
+                        
+                        this.updateMinimap();
+                        console.log('Node shape updated to:', shape); // Debug log
+                    }
+                },
+
+                deleteSelectedNode() {
+                    if (this.selectedNode) {
+                        const node = this.cy.getElementById(this.selectedNode.id);
+                        node.remove();
+                        this.selectedNode = null;
+                        this.showMessage('Node deleted successfully');
+                    }
+                },
+
+                clearGraph() {
+                    if (confirm('Are you sure you want to clear the entire mind map?')) {
+                        this.cy.elements().remove();
+                        this.selectedNode = null;
+                        this.sourceNode = null;
+                        this.showMessage('Mind map cleared');
+                        this.updateMinimap();
+                    }
+                },
+
+                fitToView() {
+                    this.cy.fit(this.cy.elements(), 50);
+                    this.showMessage('View fitted to content');
+                },
+
+                toggleLayout() {
+                    const layouts = ['cose', 'circle', 'grid', 'breadthfirst', 'concentric'];
+                    const currentLayout = this.cy.options().layout.name;
+                    const currentIndex = layouts.indexOf(currentLayout);
+                    const nextLayout = layouts[(currentIndex + 1) % layouts.length];
+                    
+                    this.cy.layout({
+                        name: nextLayout,
+                        animate: true,
+                        animationDuration: 1000
+                    }).run();
+
+                    this.showMessage(`Applied ${nextLayout} layout`);
+                    
+                    // Update minimap after layout completes
+                    setTimeout(() => {
+                        this.updateMinimap();
+                    }, 1100);
+                },
+
+                updateStats() {
+                    this.nodeCount = this.cy.nodes().length;
+                    this.edgeCount = this.cy.edges().length;
+                },
+
+                exportAsJSON() {
+                    const data = {
+                        elements: this.cy.json().elements,
+                        metadata: {
+                            created: new Date().toISOString(),
+                            nodeCount: this.nodeCount,
+                            edgeCount: this.edgeCount
+                        }
+                    };
+
+                    const dataStr = JSON.stringify(data, null, 2);
+                    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                    const url = URL.createObjectURL(dataBlob);
+                    
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `mindmap_${new Date().toISOString().split('T')[0]}.json`;
+                    link.click();
+                    
+                    URL.revokeObjectURL(url);
+                    this.showMessage('Mind map exported as JSON');
+                },
+
+                exportAsImage() {
+                    const cy = document.getElementById('cy');
+                    html2canvas(cy, {
+                        backgroundColor: null,
+                        scale: 2
+                    }).then(canvas => {
+                        const link = document.createElement('a');
+                        link.download = `mindmap_${new Date().toISOString().split('T')[0]}.png`;
+                        link.href = canvas.toDataURL();
+                        link.click();
+                        this.showMessage('Mind map exported as image');
+                    });
+                },
+
+                importJSON(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const data = JSON.parse(e.target.result);
+                            if (data.elements) {
+                                this.cy.elements().remove();
+                                this.cy.add(data.elements);
+                                this.cy.layout({ name: 'cose', animate: true }).run();
+                                this.showMessage('Mind map imported successfully');
+                                
+                                // Update minimap after import completes
+                                setTimeout(() => {
+                                    this.updateMinimap();
+                                }, 1100);
+                            }
+                        } catch (error) {
+                            alert('Error importing file: ' + error.message);
+                        }
+                    };
+                    reader.readAsText(file);
+                    event.target.value = ''; // Reset file input
+                },
+
+                saveToStorage() {
+                    const data = {
+                        elements: this.cy.json().elements,
+                        lastSaved: new Date().toISOString()
+                    };
+                    localStorage.setItem('mindmap_data', JSON.stringify(data));
+                },
+
+                loadFromStorage() {
+                    const stored = localStorage.getItem('mindmap_data');
+                    if (stored) {
+                        try {
+                            const data = JSON.parse(stored);
+                            if (data.elements && data.elements.length > 0) {
+                                this.cy.add(data.elements);
+                                this.cy.layout({ name: 'cose', animate: false }).run();
+                                this.updateMinimap();
+                            }
+                        } catch (error) {
+                            console.error('Error loading from storage:', error);
+                        }
+                    }
+                },
+
+                showMessage(msg) {
+                    this.message = msg;
+                    setTimeout(() => {
+                        this.message = '';
+                    }, 3000);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
